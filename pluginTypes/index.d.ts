@@ -73,6 +73,7 @@ declare module "@scom/scom-flow" {
         private renderEmbedElm;
         private onSelectedStep;
         init(): void;
+        private setThemeVar;
         render(): any;
     }
 }
