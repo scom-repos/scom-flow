@@ -1,5 +1,6 @@
-import { Module, customModule, Container } from '@ijstech/components';
+import { Module, customModule, Container, Styles } from '@ijstech/components';
 import ScomFlow from '@scom/scom-flow';
+const Theme = Styles.Theme.currentTheme;
 
 @customModule
 export default class Module1 extends Module {
@@ -11,6 +12,7 @@ export default class Module1 extends Module {
             {
                 name: 'Action: First exchange som ETH for USDT',
                 image: '',
+                color: Theme.colors.warning.main,
                 embedData: {
                     "guid": "68492d2c-2062-11ee-a663-0242ac130003",
                     "dataUri": "bafybeih5v2hoeuio4ou3pnqr47lilaa6m6ojqxv3hllk4mycju3imoh4gq",
@@ -40,11 +42,13 @@ export default class Module1 extends Module {
             },
             {
                 name: 'Action: Add ETH and USDT to liquidity pool',
-                image: ''
+                image: '',
+                color: Theme.colors.error.main
             },
             {
                 name: 'Action: Stake liquidity for farmings and start mining',
-                image: ''
+                image: '',
+                color: Theme.colors.success.main
             }
         ]
     }

@@ -49,7 +49,7 @@ export default class ScomFlow extends Module {
   private flowImg: Image;
   private lbDesc: Label;
   private stepElms: HStack[] = [];
-  private widgets: Module[] = [];
+  private widgets: Map<number, Module> = new Map();
   private embeddersConfigurator: any;
 
   private _steps: IStep[] = [];
@@ -108,25 +108,27 @@ export default class ScomFlow extends Module {
 
   set activeStep(step: number) {
     if (this._activeStep === step) return;
-    if (this.stepElms && this.stepElms.length) {
+    if (this.stepElms?.length) {
       const activeStep = this.stepElms[this._activeStep];
       const targetStep = this.stepElms[step];
       if (activeStep) activeStep.classList.remove('--active');
       if (targetStep) targetStep.classList.add('--active');
     }
-    if (this.widgets && this.widgets.length) {
-      const activeWidget = this.widgets[this._activeStep];
-      const targetWidget = this.widgets[step];
+    if (this.widgets?.size) {
+      const activeWidget = this.widgets.get(this._activeStep)
+      const targetWidget = this.widgets.get(step)
       if (activeWidget) activeWidget.visible = false;
       if (targetWidget) targetWidget.visible = true;
-      else this.renderEmbedElm(step)
+      else {
+        this.renderEmbedElm(step)
+      }
     }
     this._activeStep = step;
   }
 
   private renderOption() {}
 
-  private renderSteps() {
+  private async renderSteps() {
     this.resetData();
     for (let i = 0; i < this.steps.length; i++) {
       const step = this.steps[i]
@@ -160,25 +162,33 @@ export default class ScomFlow extends Module {
       item.setAttribute('data-step', `${i}`)
       this.pnlStep.appendChild(item);
       this.stepElms.push(item);
+      const contentPanel = (<i-panel class="pane-item" visible={false}></i-panel>);
+      contentPanel.setAttribute('data-step', `${i}`);
+      this.pnlEmbed.appendChild(contentPanel);
+      this.widgets.set(i, contentPanel);
     }
-    this.renderEmbedElm(this.activeStep)
+    await this.renderEmbedElm(this.activeStep)
   }
 
   private resetData() {
-    this.widgets = [];
+    this.widgets = new Map();
+    this.stepElms = [];
     this.pnlStep.clearInnerHTML();
     this.pnlEmbed.clearInnerHTML();
-    this.stepElms = [];
   }
 
   private async renderEmbedElm(step: number) {
+    const widgetContainer = this.widgets.get(step);
+    if (!widgetContainer) return;
+    widgetContainer.clearInnerHTML();
+    widgetContainer.visible = true;
     const stepData = this.steps[step]?.embedData || {}
     const embedData = await getWidgetData(stepData.dataUri);
     if (!embedData) return;
     const module = embedData.module;
     const path = module.path ? module.path : module.name.replace('@scom/', '');
     const widget = await getEmbedElement(path) as Module;
-    this.pnlEmbed.appendChild(widget);
+    widgetContainer.appendChild(widget);
     await (widget as any).ready();
     let properties = embedData.properties;
     let tag = embedData.tag;
@@ -189,7 +199,6 @@ export default class ScomFlow extends Module {
         await this.embeddersConfigurator.setTag(tag);
       }
     }
-    this.widgets.push(widget)
   }
 
   private onSelectedStep(index: number) {
@@ -208,6 +217,13 @@ export default class ScomFlow extends Module {
     if (option) this.option = option;
     const steps = this.getAttribute('steps', true);
     if (steps) this.steps = steps;
+    const themeVar = document.body.style.getPropertyValue('--theme');
+    this.setThemeVar(themeVar);
+  }
+
+  private setThemeVar(theme: string) {
+    this.style.setProperty('--card-color-l', theme === 'light' ? '5%' : '95%');
+    this.style.setProperty('--card-color-a', theme === 'light' ? '0.05' : '0.1');
   }
 
   render() {
@@ -218,16 +234,17 @@ export default class ScomFlow extends Module {
           gap={{row: '1rem', column: '2rem'}}
         >
           <i-vstack
-            border={{width: '1px', style: 'solid', color: Theme.divider}}
+            border={{style: 'none'}}
+            class="custom-border"
           >
             <i-hstack
               verticalAlignment="center"
-              border={{bottom: {width: '1px', style: 'solid', color: Theme.divider}}}
+              border={{bottom: {width: '1px', style: 'solid', color: 'hsla(0, 0%, var(--card-color-l), 0.03)'}}}
               padding={{left: '1rem', right: '1rem', top: '1rem', bottom: '1rem'}}
               background={{color: Theme.action.hover}}
               gap={'1rem'}
             >
-              <i-image id="flowImg" url={asset.scom} width={50} display="block" border={{radius: '50%'}}></i-image>
+              <i-image id="flowImg" url={asset.scom} width={50} height={50} display="block"></i-image>
               <i-label id="lbDesc" caption=''></i-label>
             </i-hstack>
             <i-vstack
@@ -237,7 +254,8 @@ export default class ScomFlow extends Module {
             />
           </i-vstack>
           <i-panel
-            border={{width: '1px', style: 'solid', color: Theme.divider}}
+            border={{style: 'none'}}
+            class="custom-border"
           >
             <i-vstack
               id="pnlLoading"
@@ -249,11 +267,7 @@ export default class ScomFlow extends Module {
             >
               <i-panel class={spinnerStyle}></i-panel>
             </i-vstack>
-            <i-vstack
-              id="pnlEmbed"
-              width="100%"
-              padding={{ top: '0.5rem', bottom: '0.5rem', left: '0.5rem', right: '0.5rem' }}
-            />
+            <i-vstack id="pnlEmbed" width="100%"/>
           </i-panel>
         </i-grid-layout>
       </i-panel>

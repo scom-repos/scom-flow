@@ -16,6 +16,14 @@ export const customStyles = Styles.style({
     },
     '.step.--active .step-label-container > .step-label': {
       fontWeight: 600
+    },
+    '.custom-border': {
+      boxShadow: `0 0 0 2px hsla(0, 0%, var(--card-color-l), var(--card-color-a))`,
+    },
+    '#flowImg img': {
+      borderRadius: '50%',
+      objectFit: 'cover',
+      objectPosition: 'center'
     }
   }
 })
