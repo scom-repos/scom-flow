@@ -62,42 +62,15 @@ define("@scom/scom-flow/asset.ts", ["require", "exports", "@ijstech/components"]
         fullPath
     };
 });
-define("@scom/scom-flow/utils/index.ts", ["require", "exports", "@ijstech/components"], function (require, exports, components_3) {
+define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/scom-flow/index.css.ts", "@scom/scom-flow/asset.ts"], function (require, exports, components_3, index_css_1, asset_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.getWidgetData = exports.getEmbedElement = void 0;
-    const getIPFSBaseUrl = () => {
-        let url = `${window.location.origin}/ipfs/`;
-        return `https://dev.decom.app/ipfs/`;
-    };
-    const getEmbedElement = async (path) => {
-        if (path.startsWith("libs/@scom/"))
-            path = path.slice(11);
-        const element = await components_3.application.createElement(path);
-        return element;
-    };
-    exports.getEmbedElement = getEmbedElement;
-    const getWidgetData = async (dataUri) => {
-        let widgetData;
-        try {
-            const ipfsBaseUrl = getIPFSBaseUrl();
-            const scconfigResponse = await fetch(`${ipfsBaseUrl}${dataUri}/scconfig.json`);
-            const scconfigResult = await scconfigResponse.json();
-            widgetData = scconfigResult.widgetData;
-        }
-        catch (err) { }
-        return widgetData;
-    };
-    exports.getWidgetData = getWidgetData;
-});
-define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/scom-flow/index.css.ts", "@scom/scom-flow/asset.ts", "@scom/scom-flow/utils/index.ts"], function (require, exports, components_4, index_css_1, asset_1, utils_1) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    const Theme = components_4.Styles.Theme.ThemeVars;
-    let ScomFlow = class ScomFlow extends components_4.Module {
+    const Theme = components_3.Styles.Theme.ThemeVars;
+    let ScomFlow = class ScomFlow extends components_3.Module {
         constructor(parent, options) {
             super(parent, options);
             this.stepElms = [];
+            this.widgetContainers = new Map();
             this.widgets = new Map();
             this._steps = [];
             this._option = 'manual';
@@ -157,16 +130,13 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                 if (targetStep)
                     targetStep.classList.add('--active');
             }
-            if ((_b = this.widgets) === null || _b === void 0 ? void 0 : _b.size) {
-                const activeWidget = this.widgets.get(this._activeStep);
-                const targetWidget = this.widgets.get(step);
-                if (activeWidget)
-                    activeWidget.visible = false;
-                if (targetWidget)
-                    targetWidget.visible = true;
-                else {
-                    this.renderEmbedElm(step);
-                }
+            if ((_b = this.widgetContainers) === null || _b === void 0 ? void 0 : _b.size) {
+                const activeWidgetContainer = this.widgetContainers.get(this._activeStep);
+                const targetWidgetContainer = this.widgetContainers.get(step);
+                if (activeWidgetContainer)
+                    activeWidgetContainer.visible = false;
+                if (targetWidgetContainer)
+                    targetWidgetContainer.visible = true;
             }
             this._activeStep = step;
         }
@@ -189,44 +159,45 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                 const contentPanel = (this.$render("i-panel", { class: "pane-item", visible: false }));
                 contentPanel.setAttribute('data-step', `${i}`);
                 this.pnlEmbed.appendChild(contentPanel);
-                this.widgets.set(i, contentPanel);
+                this.widgetContainers.set(i, contentPanel);
             }
             await this.renderEmbedElm(this.activeStep);
         }
         resetData() {
+            this.widgetContainers = new Map();
             this.widgets = new Map();
             this.stepElms = [];
             this.pnlStep.clearInnerHTML();
             this.pnlEmbed.clearInnerHTML();
         }
         async renderEmbedElm(step) {
-            var _a, _b, _c;
-            const widgetContainer = this.widgets.get(step);
+            var _a, _b, _c, _d;
+            const widgetContainer = this.widgetContainers.get(step);
             if (!widgetContainer)
                 return;
             widgetContainer.clearInnerHTML();
             widgetContainer.visible = true;
-            const stepData = ((_a = this.steps[step]) === null || _a === void 0 ? void 0 : _a.embedData) || {};
-            const embedData = await (0, utils_1.getWidgetData)(stepData.dataUri);
-            if (!embedData)
-                return;
-            const module = embedData.module;
-            const path = module.path ? module.path : module.name.replace('@scom/', '');
-            const widget = await (0, utils_1.getEmbedElement)(path);
+            const embedData = ((_a = this.steps[step]) === null || _a === void 0 ? void 0 : _a.embedData) || {};
+            const widget = await components_3.application.createElement(((_b = embedData === null || embedData === void 0 ? void 0 : embedData.module) === null || _b === void 0 ? void 0 : _b.path) || '');
+            this.widgets.set(step, widget);
             widgetContainer.appendChild(widget);
             await widget.ready();
             let properties = embedData.properties;
             let tag = embedData.tag;
             if (widget === null || widget === void 0 ? void 0 : widget.getConfigurators) {
                 this.embeddersConfigurator = widget.getConfigurators().find((configurator) => configurator.target === "Embedders");
-                ((_b = this.embeddersConfigurator) === null || _b === void 0 ? void 0 : _b.setData) && await this.embeddersConfigurator.setData(properties);
-                if (tag && ((_c = this.embeddersConfigurator) === null || _c === void 0 ? void 0 : _c.setTag)) {
+                ((_c = this.embeddersConfigurator) === null || _c === void 0 ? void 0 : _c.setData) && await this.embeddersConfigurator.setData(properties);
+                if (tag && ((_d = this.embeddersConfigurator) === null || _d === void 0 ? void 0 : _d.setTag)) {
                     await this.embeddersConfigurator.setTag(tag);
                 }
             }
         }
-        onSelectedStep(index) {
+        async onSelectedStep(index) {
             this.activeStep = index;
+            const targetWidget = this.widgets.get(index);
+            if (!targetWidget) {
+                await this.renderEmbedElm(index);
+            }
             if (this.onChanged)
                 this.onChanged(this, this.activeStep);
         }
@@ -267,7 +238,7 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
         }
     };
     ScomFlow = __decorate([
-        (0, components_4.customElements)('i-scom-flow')
+        (0, components_3.customElements)('i-scom-flow')
     ], ScomFlow);
     exports.default = ScomFlow;
 });

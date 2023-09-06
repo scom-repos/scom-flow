@@ -14,30 +14,51 @@ export default class Module1 extends Module {
                 image: '',
                 color: Theme.colors.warning.main,
                 embedData: {
-                    "guid": "68492d2c-2062-11ee-a663-0242ac130003",
-                    "dataUri": "bafybeih5v2hoeuio4ou3pnqr47lilaa6m6ojqxv3hllk4mycju3imoh4gq",
-                    "contractAddress": "",
-                    "owner": "0xb15E094957c31D6b0d08714015fF85Bec7842635",
-                    "developedBy": "OpenSwap",
-                    "title": "SushiSwap Swap",
-                    "img": "https://ipfs.scom.dev/ipfs/bafkreic4ak6x7f5iyq6bfwne7suo77ojo4cudusydxrf245nwdfwkquupi",
-                    "category": "swaps",
-                    "description": "Carry out token swaps using SushiSwap. This Swap Dapp is registered to www.sushi.com",
-                    "commissionRate": 1,
-                    "startDate": 1683072430,
-                    "numOfEmbedders": 10344,
-                    "lastUpdated": 1685525220,
-                    "tags": [
-                        "NEW"
-                    ],
-                    "chainIds": [
-                        1
-                    ],
-                    "categories": [
-                        "swaps",
-                        "embed-to-earn"
-                    ],
-                    "categoryName": "Swaps"
+                    "properties": {
+                        "providers": [
+                            {
+                                "key": "OpenSwap",
+                                "chainId": 43113
+                            }
+                        ],
+                        "category": "fixed-pair",
+                        "tokens": [
+                            {
+                                "name": "Tether USD",
+                                "address": "0xb9C31Ea1D475c25E58a1bE1a46221db55E5A7C6e",
+                                "symbol": "USDT.e",
+                                "decimals": 6,
+                                "chainId": 43113
+                            },
+                            {
+                                "name": "OpenSwap",
+                                "address": "0x78d9D80E67bC80A11efbf84B7c8A65Da51a8EF3C",
+                                "symbol": "OSWAP",
+                                "decimals": 18,
+                                "isCommon": true,
+                                "chainId": 43113
+                            }
+                        ],
+                        "defaultChainId": 43113,
+                        "networks": [
+                            {
+                                "chainId": 43113
+                            }
+                        ],
+                        "wallets": [
+                            {
+                                "name": "metamask"
+                            }
+                        ],
+                        "showHeader": true,
+                        "showFooter": true,
+                        "title": ""
+                    },
+                    "module": {
+                        "name": "Swap DApp",
+                        "path": "scom-swap",
+                        "category": "micro-dapps"
+                    }
                 }
             },
             {
@@ -48,7 +69,38 @@ export default class Module1 extends Module {
             {
                 name: 'Action: Stake liquidity for farmings and start mining',
                 image: '',
-                color: Theme.colors.success.main
+                color: Theme.colors.success.main,
+                embedData: {
+                    "properties": {
+                        "chainId": 43113,
+                        "name": "Staking",
+                        "desc": "Earn OSWAP",
+                        "showContractLink": true,
+                        "stakings": {
+                          "address": "0xb9a237fbd7ddc2cd2bfafd90da97a62c2ca42c9f",
+                          "lockTokenType": 0,
+                          "rewards": {
+                            "address": "0x1754f919d45e5737eb03ee148e94bee135f2ed6d",
+                            "isCommonStartDate": false
+                          }
+                        },
+                        "networks": [
+                          {
+                            "chainId": 43113
+                          }
+                        ],
+                        "wallets": [
+                          {
+                            "name": "metamask"
+                          }
+                        ]
+                    },
+                    "module": {
+                        "name": "Staking DApp",
+                        "path": "scom-staking",
+                        "category": "micro-dapps"
+                    }
+                }
             }
         ]
     }

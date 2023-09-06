@@ -28,6 +28,7 @@
         "@scom/scom-network-list": "^0.1.5",
         "@scom/scom-network-picker": "^0.1.4",
         "@scom/scom-swap": "^0.1.18",
+        "@scom/scom-staking": "^0.1.10",
         "@scom/scom-tx-status-modal": "^0.1.0",
         "@scom/scom-token-input": "^0.1.7",
         "@scom/scom-token-list": "^0.1.5",

@@ -12,11 +12,6 @@ declare module "@scom/scom-flow/asset.ts" {
     };
     export default _default;
 }
-/// <amd-module name="@scom/scom-flow/utils/index.ts" />
-declare module "@scom/scom-flow/utils/index.ts" {
-    export const getEmbedElement: (path: string) => Promise<HTMLElement>;
-    export const getWidgetData: (dataUri: string) => Promise<any>;
-}
 /// <amd-module name="@scom/scom-flow" />
 declare module "@scom/scom-flow" {
     import { Container, Control, ControlElement, Module } from '@ijstech/components';
@@ -47,6 +42,7 @@ declare module "@scom/scom-flow" {
         private flowImg;
         private lbDesc;
         private stepElms;
+        private widgetContainers;
         private widgets;
         private embeddersConfigurator;
         private _steps;

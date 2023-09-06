@@ -9,11 +9,11 @@ import {
   Styles,
   VStack,
   Image,
-  Label
+  Label,
+  application
 } from '@ijstech/components';
 import { customStyles, spinnerStyle } from './index.css';
 import asset from './asset';
-import { getEmbedElement, getWidgetData } from './utils';
 
 const Theme = Styles.Theme.ThemeVars;
 
@@ -49,6 +49,7 @@ export default class ScomFlow extends Module {
   private flowImg: Image;
   private lbDesc: Label;
   private stepElms: HStack[] = [];
+  private widgetContainers: Map<number, Module> = new Map();
   private widgets: Map<number, Module> = new Map();
   private embeddersConfigurator: any;
 
@@ -114,14 +115,11 @@ export default class ScomFlow extends Module {
       if (activeStep) activeStep.classList.remove('--active');
       if (targetStep) targetStep.classList.add('--active');
     }
-    if (this.widgets?.size) {
-      const activeWidget = this.widgets.get(this._activeStep)
-      const targetWidget = this.widgets.get(step)
-      if (activeWidget) activeWidget.visible = false;
-      if (targetWidget) targetWidget.visible = true;
-      else {
-        this.renderEmbedElm(step)
-      }
+    if (this.widgetContainers?.size) {
+      const activeWidgetContainer = this.widgetContainers.get(this._activeStep)
+      const targetWidgetContainer = this.widgetContainers.get(step)
+      if (activeWidgetContainer) activeWidgetContainer.visible = false;
+      if (targetWidgetContainer) targetWidgetContainer.visible = true;
     }
     this._activeStep = step;
   }
@@ -165,12 +163,13 @@ export default class ScomFlow extends Module {
       const contentPanel = (<i-panel class="pane-item" visible={false}></i-panel>);
       contentPanel.setAttribute('data-step', `${i}`);
       this.pnlEmbed.appendChild(contentPanel);
-      this.widgets.set(i, contentPanel);
+      this.widgetContainers.set(i, contentPanel);
     }
     await this.renderEmbedElm(this.activeStep)
   }
 
   private resetData() {
+    this.widgetContainers = new Map();
     this.widgets = new Map();
     this.stepElms = [];
     this.pnlStep.clearInnerHTML();
@@ -178,16 +177,13 @@ export default class ScomFlow extends Module {
   }
 
   private async renderEmbedElm(step: number) {
-    const widgetContainer = this.widgets.get(step);
+    const widgetContainer = this.widgetContainers.get(step);
     if (!widgetContainer) return;
     widgetContainer.clearInnerHTML();
     widgetContainer.visible = true;
-    const stepData = this.steps[step]?.embedData || {}
-    const embedData = await getWidgetData(stepData.dataUri);
-    if (!embedData) return;
-    const module = embedData.module;
-    const path = module.path ? module.path : module.name.replace('@scom/', '');
-    const widget = await getEmbedElement(path) as Module;
+    const embedData = this.steps[step]?.embedData || {}
+    const widget: any = await application.createElement(embedData?.module?.path || '');
+    this.widgets.set(step, widget);
     widgetContainer.appendChild(widget);
     await (widget as any).ready();
     let properties = embedData.properties;
@@ -201,8 +197,12 @@ export default class ScomFlow extends Module {
     }
   }
 
-  private onSelectedStep(index: number) {
+  private async onSelectedStep(index: number) {
     this.activeStep = index;
+    const targetWidget = this.widgets.get(index);
+    if (!targetWidget) {
+      await this.renderEmbedElm(index);
+    }
     if (this.onChanged) this.onChanged(this, this.activeStep);
   }
 

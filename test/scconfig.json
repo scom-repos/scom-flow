@@ -32,6 +32,7 @@
     "@scom/scom-dapp-container",    
     "@scom/scom-dex-list",
     "@scom/scom-swap",
+    "@scom/scom-staking",
     "@scom/scom-token-input",
     "@scom/scom-token-list",
     "@scom/scom-token-modal",
