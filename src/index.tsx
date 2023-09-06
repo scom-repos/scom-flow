@@ -126,7 +126,7 @@ export default class ScomFlow extends Module {
 
   private renderOption() {}
 
-  private async renderSteps() {
+  private renderSteps() {
     this.resetData();
     for (let i = 0; i < this.steps.length; i++) {
       const step = this.steps[i]
@@ -165,7 +165,7 @@ export default class ScomFlow extends Module {
       this.pnlEmbed.appendChild(contentPanel);
       this.widgetContainers.set(i, contentPanel);
     }
-    await this.renderEmbedElm(this.activeStep)
+    this.renderEmbedElm(this.activeStep)
   }
 
   private resetData() {

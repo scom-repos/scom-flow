@@ -141,7 +141,7 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             this._activeStep = step;
         }
         renderOption() { }
-        async renderSteps() {
+        renderSteps() {
             var _a, _b;
             this.resetData();
             for (let i = 0; i < this.steps.length; i++) {
@@ -161,7 +161,7 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                 this.pnlEmbed.appendChild(contentPanel);
                 this.widgetContainers.set(i, contentPanel);
             }
-            await this.renderEmbedElm(this.activeStep);
+            this.renderEmbedElm(this.activeStep);
         }
         resetData() {
             this.widgetContainers = new Map();
