@@ -14,6 +14,7 @@ import {
 } from '@ijstech/components';
 import { customStyles, spinnerStyle } from './index.css';
 import asset from './asset';
+import { IFlowData, IOption, IStep } from './interface';
 
 const Theme = Styles.Theme.ThemeVars;
 
@@ -24,15 +25,6 @@ interface ScomFlowElement extends ControlElement {
   steps?: IStep[];
   onChanged?: (target: Control, activeStep: number) => void;
 }
-
-interface IStep {
-  name: string;
-  image?: string;
-  color?: string;
-  embedData: any;
-}
-
-type IOption = 'auto' | 'manual'
 
 declare global {
   namespace JSX {
@@ -53,11 +45,10 @@ export default class ScomFlow extends Module {
   private widgets: Map<number, Module> = new Map();
   private embeddersConfigurator: any;
 
-  private _steps: IStep[] = [];
-  private _option: IOption = 'manual';
-  private _activeStep: number = 0;
-  private _img: string = '';
-  private _description: string = '';
+  private _data: IFlowData = {
+    activeStep: 0,
+    steps: []
+  };
 
   public onChanged: (target: Control, activeStep: number) => void;
 
@@ -72,61 +63,73 @@ export default class ScomFlow extends Module {
   }
 
   get description() {
-    return this._description;
+    return this._data.description;
   }
   set description(value: string) {
-    this._description = value;
-    if (this.lbDesc) this.lbDesc.caption = value;
+    this._data.description = value;
   }
 
   get img() {
-    return this._img;
+    return this._data.img;
   }
   set img(value: string) {
-    this._img = value;
-    if (value && this.flowImg) this.flowImg.url = value;
+    this._data.img = value;
   }
   
   get steps() {
-    return this._steps ?? [];
+    return this._data.steps ?? [];
   }
   set steps(value: IStep[]) {
-    this._steps = value ?? [];
-    this.renderSteps();
+    this._data.steps = value ?? [];
   }
 
   get option() {
-    return this._option ?? 'manual';
+    return this._data.option ?? 'manual';
   }
   set option(value: IOption) {
-    this._option = value;
-    this.renderOption();
+    this._data.option = value;
   }
 
   get activeStep(): number {
-    return this._activeStep;
+    return this._data.activeStep ?? 0;
   }
 
   set activeStep(step: number) {
-    if (this._activeStep === step) return;
+    if (this._data.activeStep === step) return;
     if (this.stepElms?.length) {
-      const activeStep = this.stepElms[this._activeStep];
+      const activeStep = this.stepElms[this._data.activeStep];
       const targetStep = this.stepElms[step];
       if (activeStep) activeStep.classList.remove('--active');
       if (targetStep) targetStep.classList.add('--active');
     }
     if (this.widgetContainers?.size) {
-      const activeWidgetContainer = this.widgetContainers.get(this._activeStep)
+      const activeWidgetContainer = this.widgetContainers.get(this._data.activeStep)
       const targetWidgetContainer = this.widgetContainers.get(step)
       if (activeWidgetContainer) activeWidgetContainer.visible = false;
       if (targetWidgetContainer) targetWidgetContainer.visible = true;
     }
-    this._activeStep = step;
+    this._data.activeStep = step;
+  }
+
+  async setData(data: IFlowData) {
+    this._data = data;
+    await this.renderUI();
+  }
+
+  getData() {
+    return this._data;
+  }
+
+  private async renderUI() {
+    if (this.flowImg) this.flowImg.url = this.img;
+    if (this.lbDesc) this.lbDesc.caption = this.description;
+    this.renderOption();
+    await this.renderSteps();
   }
 
   private renderOption() {}
 
-  private renderSteps() {
+  private async renderSteps() {
     this.resetData();
     for (let i = 0; i < this.steps.length; i++) {
       const step = this.steps[i]
@@ -165,7 +168,7 @@ export default class ScomFlow extends Module {
       this.pnlEmbed.appendChild(contentPanel);
       this.widgetContainers.set(i, contentPanel);
     }
-    this.renderEmbedElm(this.activeStep)
+    await this.renderEmbedElm(this.activeStep)
   }
 
   private resetData() {
@@ -206,17 +209,15 @@ export default class ScomFlow extends Module {
     if (this.onChanged) this.onChanged(this, this.activeStep);
   }
 
-  init() {
+  async init() {
     super.init();
     this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
-    const description = this.getAttribute('description', true);
-    if (description) this.description = description;
-    const img = this.getAttribute('img', true);
-    if (img) this.img = img;
-    const option = this.getAttribute('option', true);
-    if (option) this.option = option;
-    const steps = this.getAttribute('steps', true);
-    if (steps) this.steps = steps;
+    const description = this.getAttribute('description', true, '');
+    const activeStep = this.getAttribute('activeStep', true, 0);
+    const img = this.getAttribute('img', true, '');
+    const option = this.getAttribute('option', true, 'manual');
+    const steps = this.getAttribute('steps', true, []);
+    await this.setData({ description, img, option, steps, activeStep });
     const themeVar = document.body.style.getPropertyValue('--theme');
     this.setThemeVar(themeVar);
   }
@@ -235,7 +236,7 @@ export default class ScomFlow extends Module {
         >
           <i-vstack
             border={{style: 'none'}}
-            class="custom-border"
+            class="shadow"
           >
             <i-hstack
               verticalAlignment="center"
@@ -255,7 +256,7 @@ export default class ScomFlow extends Module {
           </i-vstack>
           <i-panel
             border={{style: 'none'}}
-            class="custom-border"
+            class="shadow"
           >
             <i-vstack
               id="pnlLoading"

@@ -10,14 +10,16 @@ export const customStyles = Styles.style({
     },
     '.step.--active .step-icon': {
       background: Theme.colors.primary.main,
+      transition: 'all .3s ease-in'
     },
     '.step.--active .step-label': {
-      color: `${Theme.text.primary} !important`
+      color: `${Theme.text.primary} !important`,
+      transition: 'all .3s ease-in'
     },
     '.step.--active .step-label-container > .step-label': {
       fontWeight: 600
     },
-    '.custom-border': {
+    '.shadow': {
       boxShadow: `0 0 0 2px hsla(0, 0%, var(--card-color-l), var(--card-color-a))`,
     },
     '#flowImg img': {

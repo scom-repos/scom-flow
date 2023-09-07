@@ -17,14 +17,16 @@ define("@scom/scom-flow/index.css.ts", ["require", "exports", "@ijstech/componen
             },
             '.step.--active .step-icon': {
                 background: Theme.colors.primary.main,
+                transition: 'all .3s ease-in'
             },
             '.step.--active .step-label': {
-                color: `${Theme.text.primary} !important`
+                color: `${Theme.text.primary} !important`,
+                transition: 'all .3s ease-in'
             },
             '.step.--active .step-label-container > .step-label': {
                 fontWeight: 600
             },
-            '.custom-border': {
+            '.shadow': {
                 boxShadow: `0 0 0 2px hsla(0, 0%, var(--card-color-l), var(--card-color-a))`,
             },
             '#flowImg img': {
@@ -62,6 +64,10 @@ define("@scom/scom-flow/asset.ts", ["require", "exports", "@ijstech/components"]
         fullPath
     };
 });
+define("@scom/scom-flow/interface.ts", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+});
 define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/scom-flow/index.css.ts", "@scom/scom-flow/asset.ts"], function (require, exports, components_3, index_css_1, asset_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -72,11 +78,10 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             this.stepElms = [];
             this.widgetContainers = new Map();
             this.widgets = new Map();
-            this._steps = [];
-            this._option = 'manual';
-            this._activeStep = 0;
-            this._img = '';
-            this._description = '';
+            this._data = {
+                activeStep: 0,
+                steps: []
+            };
         }
         static async create(options, parent) {
             let self = new this(parent, options);
@@ -84,46 +89,41 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             return self;
         }
         get description() {
-            return this._description;
+            return this._data.description;
         }
         set description(value) {
-            this._description = value;
-            if (this.lbDesc)
-                this.lbDesc.caption = value;
+            this._data.description = value;
         }
         get img() {
-            return this._img;
+            return this._data.img;
         }
         set img(value) {
-            this._img = value;
-            if (value && this.flowImg)
-                this.flowImg.url = value;
+            this._data.img = value;
         }
         get steps() {
             var _a;
-            return (_a = this._steps) !== null && _a !== void 0 ? _a : [];
+            return (_a = this._data.steps) !== null && _a !== void 0 ? _a : [];
         }
         set steps(value) {
-            this._steps = value !== null && value !== void 0 ? value : [];
-            this.renderSteps();
+            this._data.steps = value !== null && value !== void 0 ? value : [];
         }
         get option() {
             var _a;
-            return (_a = this._option) !== null && _a !== void 0 ? _a : 'manual';
+            return (_a = this._data.option) !== null && _a !== void 0 ? _a : 'manual';
         }
         set option(value) {
-            this._option = value;
-            this.renderOption();
+            this._data.option = value;
         }
         get activeStep() {
-            return this._activeStep;
+            var _a;
+            return (_a = this._data.activeStep) !== null && _a !== void 0 ? _a : 0;
         }
         set activeStep(step) {
             var _a, _b;
-            if (this._activeStep === step)
+            if (this._data.activeStep === step)
                 return;
             if ((_a = this.stepElms) === null || _a === void 0 ? void 0 : _a.length) {
-                const activeStep = this.stepElms[this._activeStep];
+                const activeStep = this.stepElms[this._data.activeStep];
                 const targetStep = this.stepElms[step];
                 if (activeStep)
                     activeStep.classList.remove('--active');
@@ -131,17 +131,32 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                     targetStep.classList.add('--active');
             }
             if ((_b = this.widgetContainers) === null || _b === void 0 ? void 0 : _b.size) {
-                const activeWidgetContainer = this.widgetContainers.get(this._activeStep);
+                const activeWidgetContainer = this.widgetContainers.get(this._data.activeStep);
                 const targetWidgetContainer = this.widgetContainers.get(step);
                 if (activeWidgetContainer)
                     activeWidgetContainer.visible = false;
                 if (targetWidgetContainer)
                     targetWidgetContainer.visible = true;
             }
-            this._activeStep = step;
+            this._data.activeStep = step;
+        }
+        async setData(data) {
+            this._data = data;
+            await this.renderUI();
+        }
+        getData() {
+            return this._data;
+        }
+        async renderUI() {
+            if (this.flowImg)
+                this.flowImg.url = this.img;
+            if (this.lbDesc)
+                this.lbDesc.caption = this.description;
+            this.renderOption();
+            await this.renderSteps();
         }
         renderOption() { }
-        renderSteps() {
+        async renderSteps() {
             var _a, _b;
             this.resetData();
             for (let i = 0; i < this.steps.length; i++) {
@@ -161,7 +176,7 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                 this.pnlEmbed.appendChild(contentPanel);
                 this.widgetContainers.set(i, contentPanel);
             }
-            this.renderEmbedElm(this.activeStep);
+            await this.renderEmbedElm(this.activeStep);
         }
         resetData() {
             this.widgetContainers = new Map();
@@ -201,21 +216,15 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             if (this.onChanged)
                 this.onChanged(this, this.activeStep);
         }
-        init() {
+        async init() {
             super.init();
             this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
-            const description = this.getAttribute('description', true);
-            if (description)
-                this.description = description;
-            const img = this.getAttribute('img', true);
-            if (img)
-                this.img = img;
-            const option = this.getAttribute('option', true);
-            if (option)
-                this.option = option;
-            const steps = this.getAttribute('steps', true);
-            if (steps)
-                this.steps = steps;
+            const description = this.getAttribute('description', true, '');
+            const activeStep = this.getAttribute('activeStep', true, 0);
+            const img = this.getAttribute('img', true, '');
+            const option = this.getAttribute('option', true, 'manual');
+            const steps = this.getAttribute('steps', true, []);
+            await this.setData({ description, img, option, steps, activeStep });
             const themeVar = document.body.style.getPropertyValue('--theme');
             this.setThemeVar(themeVar);
         }
@@ -226,12 +235,12 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
         render() {
             return (this.$render("i-panel", { class: index_css_1.customStyles },
                 this.$render("i-grid-layout", { templateColumns: ['repeat(2, 1fr)'], gap: { row: '1rem', column: '2rem' } },
-                    this.$render("i-vstack", { border: { style: 'none' }, class: "custom-border" },
+                    this.$render("i-vstack", { border: { style: 'none' }, class: "shadow" },
                         this.$render("i-hstack", { verticalAlignment: "center", border: { bottom: { width: '1px', style: 'solid', color: 'hsla(0, 0%, var(--card-color-l), 0.03)' } }, padding: { left: '1rem', right: '1rem', top: '1rem', bottom: '1rem' }, background: { color: Theme.action.hover }, gap: '1rem' },
                             this.$render("i-image", { id: "flowImg", url: asset_1.default.scom, width: 50, height: 50, display: "block" }),
                             this.$render("i-label", { id: "lbDesc", caption: '' })),
                         this.$render("i-vstack", { padding: { left: '0.5rem', right: '0.5rem', top: '0.5rem', bottom: '0.5rem' }, id: "pnlStep", gap: "0.5rem" })),
-                    this.$render("i-panel", { border: { style: 'none' }, class: "custom-border" },
+                    this.$render("i-panel", { border: { style: 'none' }, class: "shadow" },
                         this.$render("i-vstack", { id: "pnlLoading", stack: { grow: '1' }, horizontalAlignment: "center", verticalAlignment: "center", padding: { top: "1rem", bottom: "1rem", left: "1rem", right: "1rem" }, visible: false },
                             this.$render("i-panel", { class: index_css_1.spinnerStyle })),
                         this.$render("i-vstack", { id: "pnlEmbed", width: "100%" })))));
