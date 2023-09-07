@@ -12,9 +12,27 @@ declare module "@scom/scom-flow/asset.ts" {
     };
     export default _default;
 }
+/// <amd-module name="@scom/scom-flow/interface.ts" />
+declare module "@scom/scom-flow/interface.ts" {
+    export interface IStep {
+        name: string;
+        image?: string;
+        color?: string;
+        embedData: any;
+    }
+    export type IOption = 'auto' | 'manual';
+    export interface IFlowData {
+        activeStep?: number;
+        img?: string;
+        description?: string;
+        option?: IOption;
+        steps?: IStep[];
+    }
+}
 /// <amd-module name="@scom/scom-flow" />
 declare module "@scom/scom-flow" {
     import { Container, Control, ControlElement, Module } from '@ijstech/components';
+    import { IFlowData, IOption, IStep } from "@scom/scom-flow/interface.ts";
     interface ScomFlowElement extends ControlElement {
         img?: string;
         description?: string;
@@ -22,13 +40,6 @@ declare module "@scom/scom-flow" {
         steps?: IStep[];
         onChanged?: (target: Control, activeStep: number) => void;
     }
-    interface IStep {
-        name: string;
-        image?: string;
-        color?: string;
-        embedData: any;
-    }
-    type IOption = 'auto' | 'manual';
     global {
         namespace JSX {
             interface IntrinsicElements {
@@ -45,11 +56,7 @@ declare module "@scom/scom-flow" {
         private widgetContainers;
         private widgets;
         private embeddersConfigurator;
-        private _steps;
-        private _option;
-        private _activeStep;
-        private _img;
-        private _description;
+        private _data;
         onChanged: (target: Control, activeStep: number) => void;
         constructor(parent?: Container, options?: any);
         static create(options?: ScomFlowElement, parent?: Container): Promise<ScomFlow>;
@@ -63,12 +70,15 @@ declare module "@scom/scom-flow" {
         set option(value: IOption);
         get activeStep(): number;
         set activeStep(step: number);
+        setData(data: IFlowData): Promise<void>;
+        getData(): IFlowData;
+        private renderUI;
         private renderOption;
         private renderSteps;
         private resetData;
         private renderEmbedElm;
         private onSelectedStep;
-        init(): void;
+        init(): Promise<void>;
         private setThemeVar;
         render(): any;
     }
