@@ -184,19 +184,15 @@ export default class ScomFlow extends Module {
     if (!widgetContainer) return;
     widgetContainer.clearInnerHTML();
     widgetContainer.visible = true;
-    const embedData = this.steps[step]?.embedData || {}
-    const widget: any = await application.createElement(embedData?.module?.path || '');
-    this.widgets.set(step, widget);
-    widgetContainer.appendChild(widget);
-    await (widget as any).ready();
-    let properties = embedData.properties;
-    let tag = embedData.tag;
-    if ((widget as any)?.getConfigurators) {
-      this.embeddersConfigurator = (widget as any).getConfigurators().find((configurator: any) => configurator.target === "Embedders");
-      (this.embeddersConfigurator?.setData) && await this.embeddersConfigurator.setData(properties);
-      if (tag && this.embeddersConfigurator?.setTag) {
-        await this.embeddersConfigurator.setTag(tag);
-      }
+    const stepInfo = this.steps[step];
+    const widgetData = stepInfo?.widgetData || {}
+    const flowWidget: any = await application.createElement(widgetData.name);
+    const flowWidgetObj = await flowWidget.handleFlowStage(widgetContainer, stepInfo.stage, {
+      ...widgetData.options,
+      tokenRequirements: widgetData.tokenRequirements
+    });
+    if (flowWidgetObj) {
+      this.widgets.set(step, flowWidgetObj.widget);
     }
   }
 

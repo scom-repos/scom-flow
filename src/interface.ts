@@ -2,7 +2,8 @@ export interface IStep {
   name: string;
   image?: string;
   color?: string;
-  embedData: any;
+  widgetData: any;
+  stage?: string;
 }
 
 export type IOption = 'auto' | 'manual'

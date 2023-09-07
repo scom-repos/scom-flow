@@ -18,7 +18,8 @@ declare module "@scom/scom-flow/interface.ts" {
         name: string;
         image?: string;
         color?: string;
-        embedData: any;
+        widgetData: any;
+        stage?: string;
     }
     export type IOption = 'auto' | 'manual';
     export interface IFlowData {

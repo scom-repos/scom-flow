@@ -186,25 +186,17 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             this.pnlEmbed.clearInnerHTML();
         }
         async renderEmbedElm(step) {
-            var _a, _b, _c, _d;
             const widgetContainer = this.widgetContainers.get(step);
             if (!widgetContainer)
                 return;
             widgetContainer.clearInnerHTML();
             widgetContainer.visible = true;
-            const embedData = ((_a = this.steps[step]) === null || _a === void 0 ? void 0 : _a.embedData) || {};
-            const widget = await components_3.application.createElement(((_b = embedData === null || embedData === void 0 ? void 0 : embedData.module) === null || _b === void 0 ? void 0 : _b.path) || '');
-            this.widgets.set(step, widget);
-            widgetContainer.appendChild(widget);
-            await widget.ready();
-            let properties = embedData.properties;
-            let tag = embedData.tag;
-            if (widget === null || widget === void 0 ? void 0 : widget.getConfigurators) {
-                this.embeddersConfigurator = widget.getConfigurators().find((configurator) => configurator.target === "Embedders");
-                ((_c = this.embeddersConfigurator) === null || _c === void 0 ? void 0 : _c.setData) && await this.embeddersConfigurator.setData(properties);
-                if (tag && ((_d = this.embeddersConfigurator) === null || _d === void 0 ? void 0 : _d.setTag)) {
-                    await this.embeddersConfigurator.setTag(tag);
-                }
+            const stepInfo = this.steps[step];
+            const widgetData = (stepInfo === null || stepInfo === void 0 ? void 0 : stepInfo.widgetData) || {};
+            const flowWidget = await components_3.application.createElement(widgetData.name);
+            const flowWidgetObj = await flowWidget.handleFlowStage(widgetContainer, stepInfo.stage, Object.assign(Object.assign({}, widgetData.options), { tokenRequirements: widgetData.tokenRequirements }));
+            if (flowWidgetObj) {
+                this.widgets.set(step, flowWidgetObj.widget);
             }
         }
         async onSelectedStep(index) {
