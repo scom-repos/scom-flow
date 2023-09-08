@@ -4,6 +4,7 @@ export interface IStep {
   color?: string;
   widgetData: any;
   stage?: string;
+  completed?: boolean;
 }
 
 export type IOption = 'auto' | 'manual'

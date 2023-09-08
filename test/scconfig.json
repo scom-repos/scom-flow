@@ -17,7 +17,8 @@
     "@scom/scom-network-picker": "*",
     "@scom/scom-token-list": "*",
     "@scom/dapp": "*",
-    "@scom/scom-flow": "*"
+    "@scom/scom-flow": "*",
+    "@scom/scom-token-acquisition": "*"
   },
   "packages": [
     "@scom/oswap-bakery-swap-contract",
@@ -37,7 +38,8 @@
     "@scom/scom-token-list",
     "@scom/scom-token-modal",
     "@scom/scom-tx-status-modal",
-    "@scom/scom-wallet-modal"
+    "@scom/scom-wallet-modal",
+    "@scom/scom-stepper"
   ],
   "menus": [
     {
