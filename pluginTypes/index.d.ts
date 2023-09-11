@@ -20,6 +20,7 @@ declare module "@scom/scom-flow/interface.ts" {
         color?: string;
         widgetData: any;
         stage?: string;
+        completed?: boolean;
     }
     export type IOption = 'auto' | 'manual';
     export interface IFlowData {
@@ -29,6 +30,31 @@ declare module "@scom/scom-flow/interface.ts" {
         option?: IOption;
         steps?: IStep[];
     }
+}
+/// <amd-module name="@scom/scom-flow/store/state.ts" />
+declare module "@scom/scom-flow/store/state.ts" {
+    import { IStep } from "@scom/scom-flow/interface.ts";
+    export class State {
+        private _steps;
+        private _activeStep;
+        private _furthestStepIndex;
+        constructor(data: any);
+        get steps(): IStep[];
+        set steps(value: IStep[]);
+        get currentStep(): IStep;
+        get activeStep(): number;
+        set activeStep(value: number);
+        get furthestStepIndex(): number;
+        set furthestStepIndex(value: number);
+        getCompleted(index: number): boolean;
+        setCompleted(index: number, value: boolean): void;
+        checkStep(): boolean;
+        checkDone(): boolean;
+    }
+}
+/// <amd-module name="@scom/scom-flow/store/index.ts" />
+declare module "@scom/scom-flow/store/index.ts" {
+    export * from "@scom/scom-flow/store/state.ts";
 }
 /// <amd-module name="@scom/scom-flow" />
 declare module "@scom/scom-flow" {
@@ -56,8 +82,8 @@ declare module "@scom/scom-flow" {
         private stepElms;
         private widgetContainers;
         private widgets;
-        private embeddersConfigurator;
         private _data;
+        private state;
         onChanged: (target: Control, activeStep: number) => void;
         constructor(parent?: Container, options?: any);
         static create(options?: ScomFlowElement, parent?: Container): Promise<ScomFlow>;
@@ -79,6 +105,7 @@ declare module "@scom/scom-flow" {
         private resetData;
         private renderEmbedElm;
         private onSelectedStep;
+        updateStatus(index: number, value: boolean): void;
         init(): Promise<void>;
         private setThemeVar;
         render(): any;

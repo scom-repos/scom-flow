@@ -15,6 +15,7 @@ import {
 import { customStyles, spinnerStyle } from './index.css';
 import asset from './asset';
 import { IFlowData, IOption, IStep } from './interface';
+import { State } from './store/index';
 
 const Theme = Styles.Theme.ThemeVars;
 
@@ -43,12 +44,12 @@ export default class ScomFlow extends Module {
   private stepElms: HStack[] = [];
   private widgetContainers: Map<number, Module> = new Map();
   private widgets: Map<number, Module> = new Map();
-  private embeddersConfigurator: any;
 
   private _data: IFlowData = {
     activeStep: 0,
     steps: []
   };
+  private state: State;
 
   public onChanged: (target: Control, activeStep: number) => void;
 
@@ -81,6 +82,7 @@ export default class ScomFlow extends Module {
   }
   set steps(value: IStep[]) {
     this._data.steps = value ?? [];
+    this.state.steps = this.steps;
   }
 
   get option() {
@@ -109,10 +111,12 @@ export default class ScomFlow extends Module {
       if (targetWidgetContainer) targetWidgetContainer.visible = true;
     }
     this._data.activeStep = step;
+    this.state.activeStep = step;
   }
 
   async setData(data: IFlowData) {
     this._data = data;
+    this.state = new State({steps: this._data.steps ?? [], activeStep: this._data.activeStep ?? 0});
     await this.renderUI();
   }
 
@@ -194,15 +198,24 @@ export default class ScomFlow extends Module {
     if (flowWidgetObj) {
       this.widgets.set(step, flowWidgetObj.widget);
     }
+    // For Test
+    // if (widgetData.name === 'scom-token-acquisition') {
+    //   flowWidgetObj.widget.onUpdateStatus();
+    // }
   }
 
   private async onSelectedStep(index: number) {
+    if (index > this.state.furthestStepIndex && !this.state.checkStep()) return;
     this.activeStep = index;
     const targetWidget = this.widgets.get(index);
     if (!targetWidget) {
       await this.renderEmbedElm(index);
     }
     if (this.onChanged) this.onChanged(this, this.activeStep);
+  }
+
+  updateStatus(index: number, value: boolean) {
+    this.state.setCompleted(index, value);
   }
 
   async init() {
@@ -229,29 +242,43 @@ export default class ScomFlow extends Module {
         <i-grid-layout
           templateColumns={['repeat(2, 1fr)']}
           gap={{row: '1rem', column: '2rem'}}
+          mediaQueries={[
+            {
+              maxWidth: '767px',
+              properties: {
+                templateColumns: ['auto']
+              }
+            }
+          ]}
         >
-          <i-vstack
-            border={{style: 'none'}}
-            class="shadow"
-          >
-            <i-hstack
-              verticalAlignment="center"
-              border={{bottom: {width: '1px', style: 'solid', color: 'hsla(0, 0%, var(--card-color-l), 0.03)'}}}
-              padding={{left: '1rem', right: '1rem', top: '1rem', bottom: '1rem'}}
-              background={{color: Theme.action.hover}}
-              gap={'1rem'}
-            >
-              <i-image id="flowImg" url={asset.scom} width={50} height={50} display="block"></i-image>
-              <i-label id="lbDesc" caption=''></i-label>
-            </i-hstack>
+          <i-panel>
             <i-vstack
-              padding={{left: '0.5rem', right: '0.5rem', top: '0.5rem', bottom: '0.5rem'}}
-              id="pnlStep"
-              gap="0.5rem"
-            />
-          </i-vstack>
+              border={{style: 'none'}}
+              class="shadow"
+            >
+              <i-hstack
+                verticalAlignment="center"
+                border={{bottom: {width: '1px', style: 'solid', color: 'hsla(0, 0%, var(--card-color-l), 0.03)'}}}
+                padding={{left: '1rem', right: '1rem', top: '1rem', bottom: '1rem'}}
+                background={{color: Theme.action.hover}}
+                gap={'1rem'}
+              >
+                <i-panel minWidth={50}>
+                  <i-image id="flowImg" url={asset.scom} width={50} height={50} display="block"></i-image>
+                </i-panel>
+                <i-label id="lbDesc" caption='' lineHeight={1.5}></i-label>
+              </i-hstack>
+              <i-vstack
+                padding={{left: '0.5rem', right: '0.5rem', top: '0.5rem', bottom: '0.5rem'}}
+                id="pnlStep"
+                gap="0.5rem"
+              />
+            </i-vstack>
+          </i-panel>
           <i-panel
             border={{style: 'none'}}
+            maxWidth={'100%'}
+            overflow={'hidden'}
             class="shadow"
           >
             <i-vstack

@@ -1,3 +1,17 @@
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -68,7 +82,65 @@ define("@scom/scom-flow/interface.ts", ["require", "exports"], function (require
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
 });
-define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/scom-flow/index.css.ts", "@scom/scom-flow/asset.ts"], function (require, exports, components_3, index_css_1, asset_1) {
+define("@scom/scom-flow/store/state.ts", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.State = void 0;
+    class State {
+        constructor(data) {
+            var _a, _b;
+            this._activeStep = (_a = data === null || data === void 0 ? void 0 : data.activeStep) !== null && _a !== void 0 ? _a : 0;
+            this._steps = (_b = data === null || data === void 0 ? void 0 : data.steps) !== null && _b !== void 0 ? _b : [];
+        }
+        get steps() {
+            var _a;
+            return (_a = this._steps) !== null && _a !== void 0 ? _a : [];
+        }
+        set steps(value) {
+            this._steps = value;
+        }
+        get currentStep() {
+            return this._steps[this.activeStep];
+        }
+        get activeStep() {
+            var _a;
+            return (_a = this._activeStep) !== null && _a !== void 0 ? _a : 0;
+        }
+        set activeStep(value) {
+            this._activeStep = value;
+        }
+        get furthestStepIndex() {
+            var _a;
+            return (_a = this._furthestStepIndex) !== null && _a !== void 0 ? _a : 0;
+        }
+        set furthestStepIndex(value) {
+            this._furthestStepIndex = value;
+        }
+        getCompleted(index) {
+            var _a, _b;
+            return (_b = (_a = this._steps[index]) === null || _a === void 0 ? void 0 : _a.completed) !== null && _b !== void 0 ? _b : false;
+        }
+        setCompleted(index, value) {
+            const step = this._steps[index];
+            if (step)
+                step.completed = value;
+        }
+        checkStep() {
+            return this.activeStep < this._steps.length && this.getCompleted(this.activeStep);
+        }
+        checkDone() {
+            return this.steps.every(step => step.completed);
+        }
+    }
+    exports.State = State;
+});
+define("@scom/scom-flow/store/index.ts", ["require", "exports", "@scom/scom-flow/store/state.ts"], function (require, exports, state_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    ///<amd-module name='@scom/scom-flow/store/index.ts'/> 
+    __exportStar(state_1, exports);
+});
+define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/scom-flow/index.css.ts", "@scom/scom-flow/asset.ts", "@scom/scom-flow/store/index.ts"], function (require, exports, components_3, index_css_1, asset_1, index_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const Theme = components_3.Styles.Theme.ThemeVars;
@@ -106,6 +178,7 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
         }
         set steps(value) {
             this._data.steps = value !== null && value !== void 0 ? value : [];
+            this.state.steps = this.steps;
         }
         get option() {
             var _a;
@@ -139,9 +212,12 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                     targetWidgetContainer.visible = true;
             }
             this._data.activeStep = step;
+            this.state.activeStep = step;
         }
         async setData(data) {
+            var _a, _b;
             this._data = data;
+            this.state = new index_1.State({ steps: (_a = this._data.steps) !== null && _a !== void 0 ? _a : [], activeStep: (_b = this._data.activeStep) !== null && _b !== void 0 ? _b : 0 });
             await this.renderUI();
         }
         getData() {
@@ -198,8 +274,14 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             if (flowWidgetObj) {
                 this.widgets.set(step, flowWidgetObj.widget);
             }
+            // For Test
+            // if (widgetData.name === 'scom-token-acquisition') {
+            //   flowWidgetObj.widget.onUpdateStatus();
+            // }
         }
         async onSelectedStep(index) {
+            if (index > this.state.furthestStepIndex && !this.state.checkStep())
+                return;
             this.activeStep = index;
             const targetWidget = this.widgets.get(index);
             if (!targetWidget) {
@@ -207,6 +289,9 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             }
             if (this.onChanged)
                 this.onChanged(this, this.activeStep);
+        }
+        updateStatus(index, value) {
+            this.state.setCompleted(index, value);
         }
         async init() {
             super.init();
@@ -226,13 +311,22 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
         }
         render() {
             return (this.$render("i-panel", { class: index_css_1.customStyles },
-                this.$render("i-grid-layout", { templateColumns: ['repeat(2, 1fr)'], gap: { row: '1rem', column: '2rem' } },
-                    this.$render("i-vstack", { border: { style: 'none' }, class: "shadow" },
-                        this.$render("i-hstack", { verticalAlignment: "center", border: { bottom: { width: '1px', style: 'solid', color: 'hsla(0, 0%, var(--card-color-l), 0.03)' } }, padding: { left: '1rem', right: '1rem', top: '1rem', bottom: '1rem' }, background: { color: Theme.action.hover }, gap: '1rem' },
-                            this.$render("i-image", { id: "flowImg", url: asset_1.default.scom, width: 50, height: 50, display: "block" }),
-                            this.$render("i-label", { id: "lbDesc", caption: '' })),
-                        this.$render("i-vstack", { padding: { left: '0.5rem', right: '0.5rem', top: '0.5rem', bottom: '0.5rem' }, id: "pnlStep", gap: "0.5rem" })),
-                    this.$render("i-panel", { border: { style: 'none' }, class: "shadow" },
+                this.$render("i-grid-layout", { templateColumns: ['repeat(2, 1fr)'], gap: { row: '1rem', column: '2rem' }, mediaQueries: [
+                        {
+                            maxWidth: '767px',
+                            properties: {
+                                templateColumns: ['auto']
+                            }
+                        }
+                    ] },
+                    this.$render("i-panel", null,
+                        this.$render("i-vstack", { border: { style: 'none' }, class: "shadow" },
+                            this.$render("i-hstack", { verticalAlignment: "center", border: { bottom: { width: '1px', style: 'solid', color: 'hsla(0, 0%, var(--card-color-l), 0.03)' } }, padding: { left: '1rem', right: '1rem', top: '1rem', bottom: '1rem' }, background: { color: Theme.action.hover }, gap: '1rem' },
+                                this.$render("i-panel", { minWidth: 50 },
+                                    this.$render("i-image", { id: "flowImg", url: asset_1.default.scom, width: 50, height: 50, display: "block" })),
+                                this.$render("i-label", { id: "lbDesc", caption: '', lineHeight: 1.5 })),
+                            this.$render("i-vstack", { padding: { left: '0.5rem', right: '0.5rem', top: '0.5rem', bottom: '0.5rem' }, id: "pnlStep", gap: "0.5rem" }))),
+                    this.$render("i-panel", { border: { style: 'none' }, maxWidth: '100%', overflow: 'hidden', class: "shadow" },
                         this.$render("i-vstack", { id: "pnlLoading", stack: { grow: '1' }, horizontalAlignment: "center", verticalAlignment: "center", padding: { top: "1rem", bottom: "1rem", left: "1rem", right: "1rem" }, visible: false },
                             this.$render("i-panel", { class: index_css_1.spinnerStyle })),
                         this.$render("i-vstack", { id: "pnlEmbed", width: "100%" })))));
