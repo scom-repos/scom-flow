@@ -140,7 +140,20 @@ define("@scom/scom-flow/store/index.ts", ["require", "exports", "@scom/scom-flow
     ///<amd-module name='@scom/scom-flow/store/index.ts'/> 
     __exportStar(state_1, exports);
 });
-define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/scom-flow/index.css.ts", "@scom/scom-flow/asset.ts", "@scom/scom-flow/store/index.ts"], function (require, exports, components_3, index_css_1, asset_1, index_1) {
+define("@scom/scom-flow/utils/index.ts", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.generateUUID = void 0;
+    ///<amd-module name='@scom/scom-flow/utils/index.ts'/> 
+    const generateUUID = () => {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    };
+    exports.generateUUID = generateUUID;
+});
+define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/scom-flow/index.css.ts", "@scom/scom-flow/asset.ts", "@scom/scom-flow/store/index.ts", "@scom/scom-flow/utils/index.ts"], function (require, exports, components_3, index_css_1, asset_1, index_1, utils_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const Theme = components_3.Styles.Theme.ThemeVars;
@@ -148,12 +161,13 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
         constructor(parent, options) {
             super(parent, options);
             this.stepElms = [];
-            this.widgetContainers = new Map();
-            this.widgets = new Map();
+            this.widgetContainerMap = new Map();
+            this.widgetModuleMap = new Map();
+            this.steps = [];
             this._data = {
-                activeStep: 0,
-                steps: []
+                activeStep: 0
             };
+            this.$eventBus = components_3.application.EventBus;
         }
         static async create(options, parent) {
             let self = new this(parent, options);
@@ -172,14 +186,13 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
         set img(value) {
             this._data.img = value;
         }
-        get steps() {
-            var _a;
-            return (_a = this._data.steps) !== null && _a !== void 0 ? _a : [];
-        }
-        set steps(value) {
-            this._data.steps = value !== null && value !== void 0 ? value : [];
-            this.state.steps = this.steps;
-        }
+        // get steps() {
+        //   return this._data.steps ?? [];
+        // }
+        // set steps(value: IStep[]) {
+        //   this._data.steps = value ?? [];
+        //   this.state.steps = this.steps;
+        // }
         get option() {
             var _a;
             return (_a = this._data.option) !== null && _a !== void 0 ? _a : 'manual';
@@ -203,9 +216,9 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                 if (targetStep)
                     targetStep.classList.add('--active');
             }
-            if ((_b = this.widgetContainers) === null || _b === void 0 ? void 0 : _b.size) {
-                const activeWidgetContainer = this.widgetContainers.get(this._data.activeStep);
-                const targetWidgetContainer = this.widgetContainers.get(step);
+            if ((_b = this.widgetContainerMap) === null || _b === void 0 ? void 0 : _b.size) {
+                const activeWidgetContainer = this.widgetContainerMap.get(this._data.activeStep);
+                const targetWidgetContainer = this.widgetContainerMap.get(step);
                 if (activeWidgetContainer)
                     activeWidgetContainer.visible = false;
                 if (targetWidgetContainer)
@@ -214,10 +227,55 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             this._data.activeStep = step;
             this.state.activeStep = step;
         }
+        calculateSteps(widgets) {
+            let steps = [];
+            for (let widget of widgets) {
+                if (widget.initialSetupStepTitle) {
+                    steps.push({
+                        name: widget.initialSetupStepTitle,
+                        image: '',
+                        color: Theme.colors.success.main,
+                        stage: 'initialSetup',
+                        widgetData: {
+                            name: widget.name,
+                            options: widget.options,
+                            tokenRequirements: widget.tokenRequirements
+                        }
+                    });
+                }
+                if (widget.tokenRequirements) {
+                    steps.push({
+                        name: 'Acquire Tokens',
+                        image: '',
+                        color: Theme.colors.success.main,
+                        stage: 'tokenRequirements',
+                        widgetData: {
+                            name: 'scom-token-acquisition',
+                            tokenRequirements: widget.tokenRequirements
+                        }
+                    });
+                }
+                if (widget.executionStepTitle) {
+                    steps.push({
+                        name: widget.executionStepTitle,
+                        image: '',
+                        color: Theme.colors.success.main,
+                        stage: '',
+                        widgetData: {
+                            options: widget.options,
+                            tokenRequirements: widget.tokenRequirements
+                        }
+                    });
+                }
+            }
+            return steps;
+        }
         async setData(data) {
             var _a, _b;
             this._data = data;
-            this.state = new index_1.State({ steps: (_a = this._data.steps) !== null && _a !== void 0 ? _a : [], activeStep: (_b = this._data.activeStep) !== null && _b !== void 0 ? _b : 0 });
+            this.steps = this.calculateSteps(this._data.widgets);
+            this.state = new index_1.State({ steps: (_a = this.steps) !== null && _a !== void 0 ? _a : [], activeStep: (_b = this._data.activeStep) !== null && _b !== void 0 ? _b : 0 });
+            this.state.steps = this.steps;
             await this.renderUI();
         }
         getData() {
@@ -250,19 +308,19 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                 const contentPanel = (this.$render("i-panel", { class: "pane-item", visible: false }));
                 contentPanel.setAttribute('data-step', `${i}`);
                 this.pnlEmbed.appendChild(contentPanel);
-                this.widgetContainers.set(i, contentPanel);
+                this.widgetContainerMap.set(i, contentPanel);
             }
             await this.renderEmbedElm(this.activeStep);
         }
         resetData() {
-            this.widgetContainers = new Map();
-            this.widgets = new Map();
+            this.widgetContainerMap = new Map();
+            this.widgetModuleMap = new Map();
             this.stepElms = [];
             this.pnlStep.clearInnerHTML();
             this.pnlEmbed.clearInnerHTML();
         }
         async renderEmbedElm(step) {
-            const widgetContainer = this.widgetContainers.get(step);
+            const widgetContainer = this.widgetContainerMap.get(step);
             if (!widgetContainer)
                 return;
             widgetContainer.clearInnerHTML();
@@ -270,20 +328,23 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             const stepInfo = this.steps[step];
             const widgetData = (stepInfo === null || stepInfo === void 0 ? void 0 : stepInfo.widgetData) || {};
             const flowWidget = await components_3.application.createElement(widgetData.name);
-            const flowWidgetObj = await flowWidget.handleFlowStage(widgetContainer, stepInfo.stage, Object.assign(Object.assign({}, widgetData.options), { tokenRequirements: widgetData.tokenRequirements }));
-            if (flowWidgetObj) {
-                this.widgets.set(step, flowWidgetObj.widget);
+            if (flowWidget) {
+                flowWidget.id = (0, utils_1.generateUUID)();
+                const flowWidgetObj = await flowWidget.handleFlowStage(widgetContainer, stepInfo.stage, Object.assign(Object.assign({}, widgetData.options), { invokerId: this.id, tokenRequirements: widgetData.tokenRequirements }));
+                if (flowWidgetObj) {
+                    this.widgetModuleMap.set(step, flowWidgetObj.widget);
+                }
+                // For Test
+                // if (widgetData.name === 'scom-token-acquisition') {
+                //   flowWidgetObj.widget.onUpdateStatus();
+                // }
             }
-            // For Test
-            // if (widgetData.name === 'scom-token-acquisition') {
-            //   flowWidgetObj.widget.onUpdateStatus();
-            // }
         }
         async onSelectedStep(index) {
             if (index > this.state.furthestStepIndex && !this.state.checkStep())
                 return;
             this.activeStep = index;
-            const targetWidget = this.widgets.get(index);
+            const targetWidget = this.widgetModuleMap.get(index);
             if (!targetWidget) {
                 await this.renderEmbedElm(index);
             }
@@ -295,15 +356,21 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
         }
         async init() {
             super.init();
+            this.id = (0, utils_1.generateUUID)();
             this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
             const description = this.getAttribute('description', true, '');
             const activeStep = this.getAttribute('activeStep', true, 0);
             const img = this.getAttribute('img', true, '');
             const option = this.getAttribute('option', true, 'manual');
-            const steps = this.getAttribute('steps', true, []);
-            await this.setData({ description, img, option, steps, activeStep });
+            const widgets = this.getAttribute('widgets', true, []);
+            await this.setData({ description, img, option, widgets, activeStep });
             const themeVar = document.body.style.getPropertyValue('--theme');
             this.setThemeVar(themeVar);
+            this.$eventBus.register(this, `${this.id}:nextStep`, async (data) => {
+                console.log('nextStep', data);
+                const nextStep = this.activeStep + 1;
+                await this.onSelectedStep(nextStep);
+            });
         }
         setThemeVar(theme) {
             this.style.setProperty('--card-color-l', theme === 'light' ? '5%' : '95%');

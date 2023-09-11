@@ -7,6 +7,31 @@ export interface IStep {
   completed?: boolean;
 }
 
+export interface ITokenIn {
+  chainId: number;
+  address?: string;
+  amount?: number;
+}
+
+export interface ITokenOut {
+  chainId: number;
+  address?: string;
+  amount?: number;
+}
+
+export interface ITokenRequirement {
+  tokensIn: ITokenIn[];
+  tokenOut: ITokenOut;
+}
+
+export interface IWidgetData {
+  name: string;
+  initialSetupStepTitle?: string;
+  executionStepTitle: string;
+  options: any;
+  tokenRequirements?: ITokenRequirement[];
+}
+
 export type IOption = 'auto' | 'manual'
 
 export interface IFlowData {
@@ -14,5 +39,5 @@ export interface IFlowData {
   img?: string;
   description?: string;
   option?: IOption;
-  steps?: IStep[];
+  widgets?: IWidgetData[];
 }

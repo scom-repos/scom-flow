@@ -10,12 +10,14 @@ import {
   VStack,
   Image,
   Label,
-  application
+  application,
+  IEventBus
 } from '@ijstech/components';
 import { customStyles, spinnerStyle } from './index.css';
 import asset from './asset';
-import { IFlowData, IOption, IStep } from './interface';
+import { IFlowData, IOption, IStep, IWidgetData } from './interface';
 import { State } from './store/index';
+import { generateUUID } from './utils';
 
 const Theme = Styles.Theme.ThemeVars;
 
@@ -23,7 +25,7 @@ interface ScomFlowElement extends ControlElement {
   img?: string;
   description?: string;
   option?: IOption;
-  steps?: IStep[];
+  widgets?: IWidgetData[];
   onChanged?: (target: Control, activeStep: number) => void;
 }
 
@@ -42,12 +44,13 @@ export default class ScomFlow extends Module {
   private flowImg: Image;
   private lbDesc: Label;
   private stepElms: HStack[] = [];
-  private widgetContainers: Map<number, Module> = new Map();
-  private widgets: Map<number, Module> = new Map();
+  private widgetContainerMap: Map<number, Module> = new Map();
+  private widgetModuleMap: Map<number, Module> = new Map();
+  private $eventBus: IEventBus;
+  private steps: IStep[] = [];
 
   private _data: IFlowData = {
-    activeStep: 0,
-    steps: []
+    activeStep: 0
   };
   private state: State;
 
@@ -55,6 +58,7 @@ export default class ScomFlow extends Module {
 
   constructor(parent?: Container, options?: any) {
     super(parent, options);
+    this.$eventBus = application.EventBus;
   }
 
   static async create(options?: ScomFlowElement, parent?: Container) {
@@ -77,13 +81,13 @@ export default class ScomFlow extends Module {
     this._data.img = value;
   }
   
-  get steps() {
-    return this._data.steps ?? [];
-  }
-  set steps(value: IStep[]) {
-    this._data.steps = value ?? [];
-    this.state.steps = this.steps;
-  }
+  // get steps() {
+  //   return this._data.steps ?? [];
+  // }
+  // set steps(value: IStep[]) {
+  //   this._data.steps = value ?? [];
+  //   this.state.steps = this.steps;
+  // }
 
   get option() {
     return this._data.option ?? 'manual';
@@ -104,9 +108,9 @@ export default class ScomFlow extends Module {
       if (activeStep) activeStep.classList.remove('--active');
       if (targetStep) targetStep.classList.add('--active');
     }
-    if (this.widgetContainers?.size) {
-      const activeWidgetContainer = this.widgetContainers.get(this._data.activeStep)
-      const targetWidgetContainer = this.widgetContainers.get(step)
+    if (this.widgetContainerMap?.size) {
+      const activeWidgetContainer = this.widgetContainerMap.get(this._data.activeStep)
+      const targetWidgetContainer = this.widgetContainerMap.get(step)
       if (activeWidgetContainer) activeWidgetContainer.visible = false;
       if (targetWidgetContainer) targetWidgetContainer.visible = true;
     }
@@ -114,9 +118,54 @@ export default class ScomFlow extends Module {
     this.state.activeStep = step;
   }
 
+  private calculateSteps(widgets: IWidgetData[]) {
+    let steps = [];
+    for (let widget of widgets) {
+      if (widget.initialSetupStepTitle) {
+        steps.push({
+          name: widget.initialSetupStepTitle,
+          image: '',
+          color: Theme.colors.success.main,
+          stage: 'initialSetup',
+          widgetData: {
+            name: widget.name,
+            options: widget.options,
+            tokenRequirements: widget.tokenRequirements
+          }
+        });
+      }
+      if (widget.tokenRequirements) {
+        steps.push({
+          name: 'Acquire Tokens',
+          image: '',
+          color: Theme.colors.success.main,
+          stage: 'tokenRequirements',
+          widgetData: {
+            name: 'scom-token-acquisition',
+            tokenRequirements: widget.tokenRequirements
+          }
+        });
+      }
+      if (widget.executionStepTitle) {
+        steps.push({
+          name: widget.executionStepTitle,
+          image: '',
+          color: Theme.colors.success.main,
+          stage: '',
+          widgetData: {
+            options: widget.options,
+            tokenRequirements: widget.tokenRequirements
+          }
+        });
+      }
+    }
+    return steps;
+  }
   async setData(data: IFlowData) {
     this._data = data;
-    this.state = new State({steps: this._data.steps ?? [], activeStep: this._data.activeStep ?? 0});
+    this.steps = this.calculateSteps(this._data.widgets);
+    this.state = new State({steps: this.steps ?? [], activeStep: this._data.activeStep ?? 0});
+    this.state.steps = this.steps;
     await this.renderUI();
   }
 
@@ -170,44 +219,48 @@ export default class ScomFlow extends Module {
       const contentPanel = (<i-panel class="pane-item" visible={false}></i-panel>);
       contentPanel.setAttribute('data-step', `${i}`);
       this.pnlEmbed.appendChild(contentPanel);
-      this.widgetContainers.set(i, contentPanel);
+      this.widgetContainerMap.set(i, contentPanel);
     }
     await this.renderEmbedElm(this.activeStep)
   }
 
   private resetData() {
-    this.widgetContainers = new Map();
-    this.widgets = new Map();
+    this.widgetContainerMap = new Map();
+    this.widgetModuleMap = new Map();
     this.stepElms = [];
     this.pnlStep.clearInnerHTML();
     this.pnlEmbed.clearInnerHTML();
   }
 
   private async renderEmbedElm(step: number) {
-    const widgetContainer = this.widgetContainers.get(step);
+    const widgetContainer = this.widgetContainerMap.get(step);
     if (!widgetContainer) return;
     widgetContainer.clearInnerHTML();
     widgetContainer.visible = true;
     const stepInfo = this.steps[step];
     const widgetData = stepInfo?.widgetData || {}
     const flowWidget: any = await application.createElement(widgetData.name);
-    const flowWidgetObj = await flowWidget.handleFlowStage(widgetContainer, stepInfo.stage, {
-      ...widgetData.options,
-      tokenRequirements: widgetData.tokenRequirements
-    });
-    if (flowWidgetObj) {
-      this.widgets.set(step, flowWidgetObj.widget);
+    if (flowWidget) {
+      flowWidget.id = generateUUID();
+      const flowWidgetObj = await flowWidget.handleFlowStage(widgetContainer, stepInfo.stage, {
+        ...widgetData.options,
+        invokerId: this.id,
+        tokenRequirements: widgetData.tokenRequirements
+      });
+      if (flowWidgetObj) {
+        this.widgetModuleMap.set(step, flowWidgetObj.widget);
+      }
+      // For Test
+      // if (widgetData.name === 'scom-token-acquisition') {
+      //   flowWidgetObj.widget.onUpdateStatus();
+      // }
     }
-    // For Test
-    // if (widgetData.name === 'scom-token-acquisition') {
-    //   flowWidgetObj.widget.onUpdateStatus();
-    // }
   }
 
   private async onSelectedStep(index: number) {
     if (index > this.state.furthestStepIndex && !this.state.checkStep()) return;
     this.activeStep = index;
-    const targetWidget = this.widgets.get(index);
+    const targetWidget = this.widgetModuleMap.get(index);
     if (!targetWidget) {
       await this.renderEmbedElm(index);
     }
@@ -220,15 +273,21 @@ export default class ScomFlow extends Module {
 
   async init() {
     super.init();
+    this.id = generateUUID();
     this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
     const description = this.getAttribute('description', true, '');
     const activeStep = this.getAttribute('activeStep', true, 0);
     const img = this.getAttribute('img', true, '');
     const option = this.getAttribute('option', true, 'manual');
-    const steps = this.getAttribute('steps', true, []);
-    await this.setData({ description, img, option, steps, activeStep });
+    const widgets = this.getAttribute('widgets', true, []);
+    await this.setData({ description, img, option, widgets, activeStep });
     const themeVar = document.body.style.getPropertyValue('--theme');
     this.setThemeVar(themeVar);
+    this.$eventBus.register(this, `${this.id}:nextStep`, async (data: any) => {
+      console.log('nextStep', data);
+      const nextStep = this.activeStep + 1;
+      await this.onSelectedStep(nextStep);
+    });
   }
 
   private setThemeVar(theme: string) {

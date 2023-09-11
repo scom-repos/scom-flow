@@ -22,13 +22,34 @@ declare module "@scom/scom-flow/interface.ts" {
         stage?: string;
         completed?: boolean;
     }
+    export interface ITokenIn {
+        chainId: number;
+        address?: string;
+        amount?: number;
+    }
+    export interface ITokenOut {
+        chainId: number;
+        address?: string;
+        amount?: number;
+    }
+    export interface ITokenRequirement {
+        tokensIn: ITokenIn[];
+        tokenOut: ITokenOut;
+    }
+    export interface IWidgetData {
+        name: string;
+        initialSetupStepTitle?: string;
+        executionStepTitle: string;
+        options: any;
+        tokenRequirements?: ITokenRequirement[];
+    }
     export type IOption = 'auto' | 'manual';
     export interface IFlowData {
         activeStep?: number;
         img?: string;
         description?: string;
         option?: IOption;
-        steps?: IStep[];
+        widgets?: IWidgetData[];
     }
 }
 /// <amd-module name="@scom/scom-flow/store/state.ts" />
@@ -56,15 +77,19 @@ declare module "@scom/scom-flow/store/state.ts" {
 declare module "@scom/scom-flow/store/index.ts" {
     export * from "@scom/scom-flow/store/state.ts";
 }
+/// <amd-module name="@scom/scom-flow/utils/index.ts" />
+declare module "@scom/scom-flow/utils/index.ts" {
+    export const generateUUID: () => string;
+}
 /// <amd-module name="@scom/scom-flow" />
 declare module "@scom/scom-flow" {
     import { Container, Control, ControlElement, Module } from '@ijstech/components';
-    import { IFlowData, IOption, IStep } from "@scom/scom-flow/interface.ts";
+    import { IFlowData, IOption, IWidgetData } from "@scom/scom-flow/interface.ts";
     interface ScomFlowElement extends ControlElement {
         img?: string;
         description?: string;
         option?: IOption;
-        steps?: IStep[];
+        widgets?: IWidgetData[];
         onChanged?: (target: Control, activeStep: number) => void;
     }
     global {
@@ -80,8 +105,10 @@ declare module "@scom/scom-flow" {
         private flowImg;
         private lbDesc;
         private stepElms;
-        private widgetContainers;
-        private widgets;
+        private widgetContainerMap;
+        private widgetModuleMap;
+        private $eventBus;
+        private steps;
         private _data;
         private state;
         onChanged: (target: Control, activeStep: number) => void;
@@ -91,12 +118,11 @@ declare module "@scom/scom-flow" {
         set description(value: string);
         get img(): string;
         set img(value: string);
-        get steps(): IStep[];
-        set steps(value: IStep[]);
         get option(): IOption;
         set option(value: IOption);
         get activeStep(): number;
         set activeStep(step: number);
+        private calculateSteps;
         setData(data: IFlowData): Promise<void>;
         getData(): IFlowData;
         private renderUI;
