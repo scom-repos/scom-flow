@@ -186,13 +186,6 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
         set img(value) {
             this._data.img = value;
         }
-        // get steps() {
-        //   return this._data.steps ?? [];
-        // }
-        // set steps(value: IStep[]) {
-        //   this._data.steps = value ?? [];
-        //   this.state.steps = this.steps;
-        // }
         get option() {
             var _a;
             return (_a = this._data.option) !== null && _a !== void 0 ? _a : 'manual';
@@ -248,7 +241,7 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                         name: 'Acquire Tokens',
                         image: '',
                         color: Theme.colors.success.main,
-                        stage: 'tokenRequirements',
+                        stage: 'tokenAcquisition',
                         widgetData: {
                             name: 'scom-token-acquisition',
                             tokenRequirements: widget.tokenRequirements
@@ -260,8 +253,9 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                         name: widget.executionStepTitle,
                         image: '',
                         color: Theme.colors.success.main,
-                        stage: '',
+                        stage: 'execution',
                         widgetData: {
+                            name: widget.name,
                             options: widget.options,
                             tokenRequirements: widget.tokenRequirements
                         }
@@ -330,7 +324,7 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             const flowWidget = await components_3.application.createElement(widgetData.name);
             if (flowWidget) {
                 flowWidget.id = (0, utils_1.generateUUID)();
-                const flowWidgetObj = await flowWidget.handleFlowStage(widgetContainer, stepInfo.stage, Object.assign(Object.assign({}, widgetData.options), { invokerId: this.id, tokenRequirements: widgetData.tokenRequirements }));
+                const flowWidgetObj = await flowWidget.handleFlowStage(widgetContainer, stepInfo.stage, Object.assign(Object.assign({}, widgetData.options), { invokerId: this.id, tokenRequirements: widgetData.tokenRequirements, initialSetupData: widgetData.initialSetupData }));
                 if (flowWidgetObj) {
                     this.widgetModuleMap.set(step, flowWidgetObj.widget);
                 }
@@ -367,9 +361,20 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             const themeVar = document.body.style.getPropertyValue('--theme');
             this.setThemeVar(themeVar);
             this.$eventBus.register(this, `${this.id}:nextStep`, async (data) => {
+                let nextStep;
+                if (data.tokenAcquisition) {
+                    nextStep = this.state.steps.findIndex((step, index) => step.stage === 'tokenAcquisition' && index > this.activeStep);
+                }
+                else {
+                    nextStep = this.state.steps.findIndex((step, index) => step.stage === 'execution' && index > this.activeStep);
+                }
+                this.steps[nextStep].widgetData = Object.assign(Object.assign({}, this.steps[nextStep].widgetData), { options: {
+                        properties: data.executionProperties
+                    }, tokenRequirements: data.tokenRequirements });
                 console.log('nextStep', data);
-                const nextStep = this.activeStep + 1;
-                await this.onSelectedStep(nextStep);
+                if (nextStep) {
+                    await this.onSelectedStep(nextStep);
+                }
             });
         }
         setThemeVar(theme) {

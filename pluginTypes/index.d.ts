@@ -25,12 +25,12 @@ declare module "@scom/scom-flow/interface.ts" {
     export interface ITokenIn {
         chainId: number;
         address?: string;
-        amount?: number;
+        amount?: string;
     }
     export interface ITokenOut {
         chainId: number;
         address?: string;
-        amount?: number;
+        amount?: string;
     }
     export interface ITokenRequirement {
         tokensIn: ITokenIn[];

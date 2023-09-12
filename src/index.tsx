@@ -80,14 +80,6 @@ export default class ScomFlow extends Module {
   set img(value: string) {
     this._data.img = value;
   }
-  
-  // get steps() {
-  //   return this._data.steps ?? [];
-  // }
-  // set steps(value: IStep[]) {
-  //   this._data.steps = value ?? [];
-  //   this.state.steps = this.steps;
-  // }
 
   get option() {
     return this._data.option ?? 'manual';
@@ -139,7 +131,7 @@ export default class ScomFlow extends Module {
           name: 'Acquire Tokens',
           image: '',
           color: Theme.colors.success.main,
-          stage: 'tokenRequirements',
+          stage: 'tokenAcquisition',
           widgetData: {
             name: 'scom-token-acquisition',
             tokenRequirements: widget.tokenRequirements
@@ -151,8 +143,9 @@ export default class ScomFlow extends Module {
           name: widget.executionStepTitle,
           image: '',
           color: Theme.colors.success.main,
-          stage: '',
+          stage: 'execution',
           widgetData: {
+            name: widget.name,
             options: widget.options,
             tokenRequirements: widget.tokenRequirements
           }
@@ -245,7 +238,8 @@ export default class ScomFlow extends Module {
       const flowWidgetObj = await flowWidget.handleFlowStage(widgetContainer, stepInfo.stage, {
         ...widgetData.options,
         invokerId: this.id,
-        tokenRequirements: widgetData.tokenRequirements
+        tokenRequirements: widgetData.tokenRequirements,
+        initialSetupData: widgetData.initialSetupData
       });
       if (flowWidgetObj) {
         this.widgetModuleMap.set(step, flowWidgetObj.widget);
@@ -284,9 +278,24 @@ export default class ScomFlow extends Module {
     const themeVar = document.body.style.getPropertyValue('--theme');
     this.setThemeVar(themeVar);
     this.$eventBus.register(this, `${this.id}:nextStep`, async (data: any) => {
+      let nextStep: number;
+      if (data.tokenAcquisition) {
+        nextStep = this.state.steps.findIndex((step, index) => step.stage === 'tokenAcquisition' && index > this.activeStep);
+      }
+      else {
+        nextStep = this.state.steps.findIndex((step, index)  => step.stage === 'execution' && index > this.activeStep);
+      }
+      this.steps[nextStep].widgetData = {
+        ...this.steps[nextStep].widgetData,
+        options: {
+          properties: data.executionProperties
+        },
+        tokenRequirements: data.tokenRequirements
+      }
       console.log('nextStep', data);
-      const nextStep = this.activeStep + 1;
-      await this.onSelectedStep(nextStep);
+      if (nextStep) {
+        await this.onSelectedStep(nextStep);
+      }
     });
   }
 
