@@ -363,6 +363,9 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             this.$eventBus.register(this, `${this.id}:nextStep`, async (data) => {
                 let nextStep;
                 let options;
+                this.steps.forEach((step, index) => {
+                    this.updateStatus(index, true);
+                });
                 if (data.tokenAcquisition) {
                     nextStep = this.state.steps.findIndex((step, index) => step.stage === 'tokenAcquisition' && index > this.activeStep);
                     options = {
