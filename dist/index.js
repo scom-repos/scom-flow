@@ -295,7 +295,7 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                             this.$render("i-label", { caption: `${i + 1}`, padding: { left: '1rem', right: '1rem', top: '0.25rem', bottom: '0.25rem' }, border: { radius: 20 }, font: { color: '#fff' }, background: { color: (_a = step.color) !== null && _a !== void 0 ? _a : Theme.colors.primary.light }, class: "step-icon" })),
                         this.$render("i-label", { caption: (_b = step.name) !== null && _b !== void 0 ? _b : '', class: "step-label" })),
                     this.$render("i-panel", null,
-                        this.$render("i-image", { url: step.image || asset_1.default.scom, width: 50, display: "flex" }))));
+                        this.$render("i-image", { url: step.image, width: 50, display: "flex" }))));
                 item.setAttribute('data-step', `${i}`);
                 this.pnlStep.appendChild(item);
                 this.stepElms.push(item);
@@ -362,17 +362,28 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             this.setThemeVar(themeVar);
             this.$eventBus.register(this, `${this.id}:nextStep`, async (data) => {
                 let nextStep;
+                let options;
                 if (data.tokenAcquisition) {
                     nextStep = this.state.steps.findIndex((step, index) => step.stage === 'tokenAcquisition' && index > this.activeStep);
+                    options = {
+                        properties: data.executionProperties,
+                        onDone: async (target) => {
+                            console.log('Completed all steps', target);
+                            this.updateStatus(this.activeStep, true);
+                            await this.onSelectedStep(this.activeStep + 1);
+                        }
+                    };
                 }
                 else {
                     nextStep = this.state.steps.findIndex((step, index) => step.stage === 'execution' && index > this.activeStep);
-                }
-                this.steps[nextStep].widgetData = Object.assign(Object.assign({}, this.steps[nextStep].widgetData), { options: {
+                    options = {
                         properties: data.executionProperties
-                    }, tokenRequirements: data.tokenRequirements });
+                    };
+                }
+                this.steps[nextStep].widgetData = Object.assign(Object.assign({}, this.steps[nextStep].widgetData), { options: options, tokenRequirements: data.tokenRequirements });
                 console.log('nextStep', data);
                 if (nextStep) {
+                    this.updateStatus(this.activeStep, true);
                     await this.onSelectedStep(nextStep);
                 }
             });

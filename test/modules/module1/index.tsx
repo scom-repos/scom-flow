@@ -39,7 +39,7 @@ const sampleData = {
                     "name": "Staking",
                     "desc": "Earn OSWAP",
                     "showContractLink": true,
-                    "stakings": {
+                    "staking": {
                         "address": "0xb9a237fbd7ddc2cd2bfafd90da97a62c2ca42c9f",
                         "lockTokenType": 0,
                         "rewards": {
@@ -191,12 +191,12 @@ export default class Module1 extends Module {
         this.panel.append(this.elm);
         await this.elm.setData({
             activeStep: 0,
-            description: 'e.g Ethan wants to participate in Yield Farming mining. Using BQL workflow, he can automate the farming operations by combining the three steps of exchange, liquidity addition and staking in one go.',
+            description: 'Stake OSWAP to earn more OSWAP',
             img: 'https://ipfs.scom.dev/ipfs/bafkreihusulbamxr2ti6s3hlciyufobsyicgoslbdhk5qkjdhfayotd6ym',
             widgets: sampleData.widgets
         });
         this.elm.onChanged = this.onChanged.bind(this);
-        this.elm.updateStatus(0, true)
+        // this.elm.updateStatus(0, true)
     }
 
     render() {

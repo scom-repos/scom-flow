@@ -202,7 +202,7 @@ export default class ScomFlow extends Module {
             <i-label caption={step.name ?? ''} class="step-label"></i-label>
           </i-vstack>
           <i-panel>
-            <i-image url={step.image || asset.scom} width={50} display="flex"></i-image>
+            <i-image url={step.image} width={50} display="flex"></i-image>
           </i-panel>
         </i-hstack>
       )
@@ -279,21 +279,32 @@ export default class ScomFlow extends Module {
     this.setThemeVar(themeVar);
     this.$eventBus.register(this, `${this.id}:nextStep`, async (data: any) => {
       let nextStep: number;
+      let options: any;
       if (data.tokenAcquisition) {
         nextStep = this.state.steps.findIndex((step, index) => step.stage === 'tokenAcquisition' && index > this.activeStep);
+        options = {
+          properties: data.executionProperties,
+          onDone: async (target: Control) => {
+              console.log('Completed all steps', target)
+              this.updateStatus(this.activeStep, true);
+              await this.onSelectedStep(this.activeStep + 1);
+          }
+        }
       }
       else {
         nextStep = this.state.steps.findIndex((step, index)  => step.stage === 'execution' && index > this.activeStep);
+        options = {
+          properties: data.executionProperties
+        }
       }
       this.steps[nextStep].widgetData = {
         ...this.steps[nextStep].widgetData,
-        options: {
-          properties: data.executionProperties
-        },
+        options: options,
         tokenRequirements: data.tokenRequirements
       }
       console.log('nextStep', data);
       if (nextStep) {
+        this.updateStatus(this.activeStep, true);
         await this.onSelectedStep(nextStep);
       }
     });
