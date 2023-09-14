@@ -132,6 +132,12 @@ declare module "@scom/scom-flow" {
         private renderEmbedElm;
         private onSelectedStep;
         updateStatus(index: number, value: boolean): void;
+        getConfigurators(): {
+            name: string;
+            target: string;
+            getData: () => Promise<IFlowData>;
+            setData: (data: IFlowData) => Promise<void>;
+        }[];
         init(): Promise<void>;
         private setThemeVar;
         render(): any;

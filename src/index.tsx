@@ -265,6 +265,23 @@ export default class ScomFlow extends Module {
     this.state.setCompleted(index, value);
   }
 
+  getConfigurators() {
+    let self = this;
+    return [
+      {
+        name: 'Embedder Configurator',
+        target: 'Embedders',
+        getData: async () => {
+          return this._data
+        },
+        setData: async (data: IFlowData) => {
+          await this.setData(data);
+        }
+      }
+    ]
+  }
+
+
   async init() {
     super.init();
     this.id = generateUUID();
@@ -289,7 +306,6 @@ export default class ScomFlow extends Module {
           properties: data.executionProperties,
           onDone: async (target: Control) => {
               console.log('Completed all steps', target)
-              this.updateStatus(this.activeStep, true);
               await this.onSelectedStep(this.activeStep + 1);
           }
         }
@@ -307,7 +323,6 @@ export default class ScomFlow extends Module {
       }
       console.log('nextStep', data);
       if (nextStep) {
-        this.updateStatus(this.activeStep, true);
         await this.onSelectedStep(nextStep);
       }
     });

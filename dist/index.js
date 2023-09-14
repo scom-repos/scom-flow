@@ -348,6 +348,21 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
         updateStatus(index, value) {
             this.state.setCompleted(index, value);
         }
+        getConfigurators() {
+            let self = this;
+            return [
+                {
+                    name: 'Embedder Configurator',
+                    target: 'Embedders',
+                    getData: async () => {
+                        return this._data;
+                    },
+                    setData: async (data) => {
+                        await this.setData(data);
+                    }
+                }
+            ];
+        }
         async init() {
             super.init();
             this.id = (0, utils_1.generateUUID)();
@@ -372,7 +387,6 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                         properties: data.executionProperties,
                         onDone: async (target) => {
                             console.log('Completed all steps', target);
-                            this.updateStatus(this.activeStep, true);
                             await this.onSelectedStep(this.activeStep + 1);
                         }
                     };
@@ -386,7 +400,6 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                 this.steps[nextStep].widgetData = Object.assign(Object.assign({}, this.steps[nextStep].widgetData), { options: options, tokenRequirements: data.tokenRequirements });
                 console.log('nextStep', data);
                 if (nextStep) {
-                    this.updateStatus(this.activeStep, true);
                     await this.onSelectedStep(nextStep);
                 }
             });
