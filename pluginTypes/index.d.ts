@@ -130,6 +130,7 @@ declare module "@scom/scom-flow" {
         private renderSteps;
         private resetData;
         private renderEmbedElm;
+        private isStepSelectable;
         private onSelectedStep;
         updateStatus(index: number, value: boolean): void;
         getConfigurators(): {

@@ -184,8 +184,8 @@ export default class ScomFlow extends Module {
           verticalAlignment="center" horizontalAlignment="space-between"
           gap={'1rem'}
           padding={{left: '1rem', right: '1.5rem', top: '1rem', bottom: '1rem'}}
-          class={'step' + (i === this.activeStep ? ' --active' : '')}
-          background={{color: Theme.action.hover}}
+          class={'flow-step' + (i === this.activeStep ? ' --active' : '')}
+          // background={{color: Theme.action.hover}}
           onClick={() => this.onSelectedStep(i)}
         >
           <i-vstack gap={'1rem'}>
@@ -206,6 +206,9 @@ export default class ScomFlow extends Module {
           </i-panel>
         </i-hstack>
       )
+      if (!this.isStepSelectable(i)) {
+        item.classList.add('--disabled');
+      }
       item.setAttribute('data-step', `${i}`)
       this.pnlStep.appendChild(item);
       this.stepElms.push(item);
@@ -251,6 +254,10 @@ export default class ScomFlow extends Module {
     }
   }
 
+  private isStepSelectable(index: number) {
+    return index <= this.state.furthestStepIndex;
+  }
+
   private async onSelectedStep(index: number) {
     if (index > this.state.furthestStepIndex && !this.state.checkStep()) return;
     this.activeStep = index;
@@ -263,6 +270,12 @@ export default class ScomFlow extends Module {
 
   updateStatus(index: number, value: boolean) {
     this.state.setCompleted(index, value);
+    if (value) {
+      this.stepElms[index].classList.remove('--disabled');
+    }
+    else {
+      this.stepElms[index].classList.add('--disabled');
+    }
   }
 
   getConfigurators() {

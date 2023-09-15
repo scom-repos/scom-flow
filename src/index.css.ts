@@ -4,19 +4,24 @@ const Theme = Styles.Theme.ThemeVars;
 
 export const customStyles = Styles.style({
   $nest: {
-    '.step': {
+    '.flow-step': {
       userSelect: 'none',
-      cursor: 'pointer'
+      cursor: 'pointer',
+      background: Theme.action.selected,
     },
-    '.step.--active .step-icon': {
+    '.flow-step.--disabled': {
+      cursor: 'not-allowed',
+      background: Theme.action.disabled,
+    },
+    '.flow-step.--active .step-icon': {
       background: Theme.colors.primary.main,
       transition: 'all .3s ease-in'
     },
-    '.step.--active .step-label': {
+    '.flow-step.--active .step-label': {
       color: `${Theme.text.primary} !important`,
       transition: 'all .3s ease-in'
     },
-    '.step.--active .step-label-container > .step-label': {
+    '.flow-step.--active .step-label-container > .step-label': {
       fontWeight: 600
     },
     '.shadow': {

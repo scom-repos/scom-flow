@@ -25,19 +25,24 @@ define("@scom/scom-flow/index.css.ts", ["require", "exports", "@ijstech/componen
     const Theme = components_1.Styles.Theme.ThemeVars;
     exports.customStyles = components_1.Styles.style({
         $nest: {
-            '.step': {
+            '.flow-step': {
                 userSelect: 'none',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                background: Theme.action.selected,
             },
-            '.step.--active .step-icon': {
+            '.flow-step.--disabled': {
+                cursor: 'not-allowed',
+                background: Theme.action.disabled,
+            },
+            '.flow-step.--active .step-icon': {
                 background: Theme.colors.primary.main,
                 transition: 'all .3s ease-in'
             },
-            '.step.--active .step-label': {
+            '.flow-step.--active .step-label': {
                 color: `${Theme.text.primary} !important`,
                 transition: 'all .3s ease-in'
             },
-            '.step.--active .step-label-container > .step-label': {
+            '.flow-step.--active .step-label-container > .step-label': {
                 fontWeight: 600
             },
             '.shadow': {
@@ -289,13 +294,18 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             this.resetData();
             for (let i = 0; i < this.steps.length; i++) {
                 const step = this.steps[i];
-                const item = (this.$render("i-hstack", { verticalAlignment: "center", horizontalAlignment: "space-between", gap: '1rem', padding: { left: '1rem', right: '1.5rem', top: '1rem', bottom: '1rem' }, class: 'step' + (i === this.activeStep ? ' --active' : ''), background: { color: Theme.action.hover }, onClick: () => this.onSelectedStep(i) },
+                const item = (this.$render("i-hstack", { verticalAlignment: "center", horizontalAlignment: "space-between", gap: '1rem', padding: { left: '1rem', right: '1.5rem', top: '1rem', bottom: '1rem' }, class: 'flow-step' + (i === this.activeStep ? ' --active' : ''), 
+                    // background={{color: Theme.action.hover}}
+                    onClick: () => this.onSelectedStep(i) },
                     this.$render("i-vstack", { gap: '1rem' },
                         this.$render("i-panel", null,
                             this.$render("i-label", { caption: `${i + 1}`, padding: { left: '1rem', right: '1rem', top: '0.25rem', bottom: '0.25rem' }, border: { radius: 20 }, font: { color: '#fff' }, background: { color: (_a = step.color) !== null && _a !== void 0 ? _a : Theme.colors.primary.light }, class: "step-icon" })),
                         this.$render("i-label", { caption: (_b = step.name) !== null && _b !== void 0 ? _b : '', class: "step-label" })),
                     this.$render("i-panel", null,
                         this.$render("i-image", { url: step.image, width: 50, display: "flex" }))));
+                if (!this.isStepSelectable(i)) {
+                    item.classList.add('--disabled');
+                }
                 item.setAttribute('data-step', `${i}`);
                 this.pnlStep.appendChild(item);
                 this.stepElms.push(item);
@@ -334,6 +344,9 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                 // }
             }
         }
+        isStepSelectable(index) {
+            return index <= this.state.furthestStepIndex;
+        }
         async onSelectedStep(index) {
             if (index > this.state.furthestStepIndex && !this.state.checkStep())
                 return;
@@ -347,6 +360,12 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
         }
         updateStatus(index, value) {
             this.state.setCompleted(index, value);
+            if (value) {
+                this.stepElms[index].classList.remove('--disabled');
+            }
+            else {
+                this.stepElms[index].classList.add('--disabled');
+            }
         }
         getConfigurators() {
             let self = this;
