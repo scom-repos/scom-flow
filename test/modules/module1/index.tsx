@@ -14,6 +14,10 @@ const sampleData = {
                 {
                     "tokensIn": [
                         {
+                            "address": "0x45eee762aaeA4e5ce317471BDa8782724972Ee19",
+                            "chainId": 97
+                        },
+                        {
                             "address": "0xb9C31Ea1D475c25E58a1bE1a46221db55E5A7C6e",
                             "chainId": 43113
                         },
@@ -25,12 +29,6 @@ const sampleData = {
                         "address": "0x78d9D80E67bC80A11efbf84B7c8A65Da51a8EF3C",
                         "chainId": 43113
                     }
-                }
-            ],
-            "transactions": [
-                {
-                    "hash": "",
-                    "type": "tokenAcquisition"
                 }
             ],
             "options": {
@@ -59,117 +57,7 @@ const sampleData = {
                     ]
                 }
             }
-        },
-        // {
-        //     name: "scom-token-acquisition",
-        //     options: {
-        //         properties: {
-        //             data: [
-        //                 {
-        //                     stepName: 'Swap USDT.e to OSWAP on Avalanche',
-        //                     data: {
-        //                         properties: {
-        //                             providers: [
-        //                                 {
-        //                                     key: 'OpenSwap',
-        //                                     chainId: 43113,
-        //                                 },
-        //                             ],
-        //                             category: 'fixed-pair',
-        //                             tokens: [
-        //                                 {
-        //                                     name: 'Tether USD',
-        //                                     address: '0xb9C31Ea1D475c25E58a1bE1a46221db55E5A7C6e',
-        //                                     symbol: 'USDT.e',
-        //                                     decimals: 6,
-        //                                     chainId: 43113,
-        //                                 },
-        //                                 {
-        //                                     name: 'OpenSwap',
-        //                                     address: '0x78d9D80E67bC80A11efbf84B7c8A65Da51a8EF3C',
-        //                                     symbol: 'OSWAP',
-        //                                     decimals: 18,
-        //                                     chainId: 43113,
-        //                                 },
-        //                             ],
-        //                             defaultChainId: 43113,
-        //                             networks: [
-        //                                 {
-        //                                     chainId: 43113,
-        //                                 },
-        //                             ],
-        //                             wallets: [
-        //                                 {
-        //                                     name: 'metamask',
-        //                                 },
-        //                             ]
-        //                         }
-        //                     }
-        //                 },                        
-        //                 // {
-        //                 //     stepName: 'Bridge OSWAP from Avalanche to BSC',
-        //                 //     data: {
-        //                 //         properties: {
-        //                 //             providers: [
-        //                 //                 {
-        //                 //                     key: 'OpenSwap',
-        //                 //                     chainId: 97,
-        //                 //                 },
-        //                 //                 {
-        //                 //                     key: 'OpenSwap',
-        //                 //                     chainId: 43113,
-        //                 //                 },
-        //                 //             ],
-        //                 //             category: 'cross-chain-swap',
-        //                 //             tokens: [
-        //                 //                 {
-        //                 //                     name: 'OpenSwap',
-        //                 //                     address: '0x45eee762aaeA4e5ce317471BDa8782724972Ee19',
-        //                 //                     symbol: 'OSWAP',
-        //                 //                     decimals: 18,
-        //                 //                     chainId: 97,
-        //                 //                 },
-        //                 //                 {
-        //                 //                     name: 'USDT',
-        //                 //                     address: '0x29386B60e0A9A1a30e1488ADA47256577ca2C385',
-        //                 //                     symbol: 'USDT',
-        //                 //                     decimals: 6,
-        //                 //                     chainId: 97,
-        //                 //                 },                                        
-        //                 //                 {
-        //                 //                     name: 'OpenSwap',
-        //                 //                     address: '0x78d9D80E67bC80A11efbf84B7c8A65Da51a8EF3C',
-        //                 //                     symbol: 'OSWAP',
-        //                 //                     decimals: 18,
-        //                 //                     chainId: 43113,
-        //                 //                 },
-        //                 //             ],
-        //                 //             defaultChainId: 43113,
-        //                 //             networks: [
-        //                 //                 {
-        //                 //                     chainId: 97,
-        //                 //                 },
-        //                 //             ],
-        //                 //             wallets: [
-        //                 //                 {
-        //                 //                     name: 'metamask',
-        //                 //                 },
-        //                 //             ]
-        //                 //         }
-        //                 //     }
-        //                 // },
-        //             ],
-        //             onDone: function (target: Control) {
-        //                 console.log('Completed all steps', target)
-        //                 const flowParent = target.closest('i-scom-flow') as any;
-        //                 if (flowParent) {
-        //                     flowParent.updateStatus(1, true);
-        //                     flowParent.activeStep = 2;
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
+        }
     ]
 };
 
