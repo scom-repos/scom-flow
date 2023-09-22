@@ -350,7 +350,7 @@ export default class ScomFlow extends Module {
     return (
       <i-panel class={customStyles}>
         <i-grid-layout
-          templateColumns={['repeat(2, 1fr)']}
+          templateColumns={['3fr 4fr']}
           gap={{row: '1rem', column: '2rem'}}
           mediaQueries={[
             {

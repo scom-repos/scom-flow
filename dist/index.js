@@ -429,7 +429,7 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
         }
         render() {
             return (this.$render("i-panel", { class: index_css_1.customStyles },
-                this.$render("i-grid-layout", { templateColumns: ['repeat(2, 1fr)'], gap: { row: '1rem', column: '2rem' }, mediaQueries: [
+                this.$render("i-grid-layout", { templateColumns: ['3fr 4fr'], gap: { row: '1rem', column: '2rem' }, mediaQueries: [
                         {
                             maxWidth: '767px',
                             properties: {
