@@ -22,6 +22,7 @@ import { IFlowData, IOption, IStep, IWidgetData } from './interface';
 import { State } from './store/index';
 import { generateUUID } from './utils';
 import { INetwork, Utils } from '@ijstech/eth-wallet';
+import ScomAccordion  from '@scom/scom-accordion';
 
 const Theme = Styles.Theme.ThemeVars;
 
@@ -54,6 +55,7 @@ export default class ScomFlow extends Module {
   private $eventBus: IEventBus;
   private steps: IStep[] = [];
   private tableTransactions: Table;
+  private transAccordion: ScomAccordion;
   private TransactionsTableColumns = [
     {
       title: 'Date',
@@ -371,6 +373,8 @@ export default class ScomFlow extends Module {
 
   async init() {
     super.init();
+    this.tableTransactions = <i-table id="tableTransactions" columns={this.TransactionsTableColumns}></i-table>;
+    this.transAccordion.addChild(this.tableTransactions);
     this.id = generateUUID();
     this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
     const description = this.getAttribute('description', true, '');
@@ -429,19 +433,21 @@ export default class ScomFlow extends Module {
     this.style.setProperty('--card-color-a', theme === 'light' ? '0.05' : '0.1');
   }
 
-  private toggleExpandablePanel(c: Control) {
-    const icon: Icon = c.querySelector('i-icon.expandable-icon');
-    const contentPanel: Panel = c.parentNode.querySelector(`i-panel.${expandablePanelStyle}`);
-    if (c.classList.contains('expanded')) {
-      icon.name = 'angle-right';
-      contentPanel.visible = false;
-      c.classList.remove('expanded');
-    } else {
-      icon.name = 'angle-down';
-      contentPanel.visible = true;
-      c.classList.add('expanded');
-    }
-  }
+  // private toggleExpandablePanel(c: Control) {
+  //   const icon: Icon = c.querySelector('i-icon.expandable-icon');
+  //   const contentPanel: Panel = c.parentNode.querySelector(`i-panel.${expandablePanelStyle}`);
+  //   if (c.classList.contains('expanded')) {
+  //     icon.name = 'angle-right';
+  //     contentPanel.visible = false;
+  //     c.classList.remove('expanded');
+  //   } else {
+  //     icon.name = 'angle-down';
+  //     contentPanel.visible = true;
+  //     c.classList.add('expanded');
+  //   }
+  // }
+
+  private onExpanded(c: Control, expanded: boolean) {}
 
   render() {
     return (
@@ -500,7 +506,13 @@ export default class ScomFlow extends Module {
             </i-vstack>
             <i-vstack id="pnlEmbed" width="100%"/>
             <i-vstack id="pnlTransactions" visible={false} padding={{ top: '0.5rem', bottom: '0.5rem', left: '0.5rem', right: '0.5rem' }}>
-              <i-hstack
+              <i-scom-accordion
+                id="transAccordion"
+                name="Transactions"
+                defaultExpanded={true}
+                onChanged={this.onExpanded}
+              ></i-scom-accordion>
+              {/* <i-hstack
                 horizontalAlignment="space-between"
                 verticalAlignment="center"
                 padding={{ top: '0.5rem', bottom: '0.5rem' }}
@@ -512,7 +524,7 @@ export default class ScomFlow extends Module {
               </i-hstack>
               <i-panel class={expandablePanelStyle}>
                 <i-table id="tableTransactions" columns={this.TransactionsTableColumns}></i-table>
-              </i-panel>   
+              </i-panel>    */}
             </i-vstack>
           </i-vstack>
         </i-grid-layout>

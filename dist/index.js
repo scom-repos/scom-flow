@@ -461,6 +461,8 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
         }
         async init() {
             super.init();
+            this.tableTransactions = this.$render("i-table", { id: "tableTransactions", columns: this.TransactionsTableColumns });
+            this.transAccordion.addChild(this.tableTransactions);
             this.id = (0, utils_1.generateUUID)();
             this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
             const description = this.getAttribute('description', true, '');
@@ -513,20 +515,20 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             this.style.setProperty('--card-color-l', theme === 'light' ? '5%' : '95%');
             this.style.setProperty('--card-color-a', theme === 'light' ? '0.05' : '0.1');
         }
-        toggleExpandablePanel(c) {
-            const icon = c.querySelector('i-icon.expandable-icon');
-            const contentPanel = c.parentNode.querySelector(`i-panel.${index_css_1.expandablePanelStyle}`);
-            if (c.classList.contains('expanded')) {
-                icon.name = 'angle-right';
-                contentPanel.visible = false;
-                c.classList.remove('expanded');
-            }
-            else {
-                icon.name = 'angle-down';
-                contentPanel.visible = true;
-                c.classList.add('expanded');
-            }
-        }
+        // private toggleExpandablePanel(c: Control) {
+        //   const icon: Icon = c.querySelector('i-icon.expandable-icon');
+        //   const contentPanel: Panel = c.parentNode.querySelector(`i-panel.${expandablePanelStyle}`);
+        //   if (c.classList.contains('expanded')) {
+        //     icon.name = 'angle-right';
+        //     contentPanel.visible = false;
+        //     c.classList.remove('expanded');
+        //   } else {
+        //     icon.name = 'angle-down';
+        //     contentPanel.visible = true;
+        //     c.classList.add('expanded');
+        //   }
+        // }
+        onExpanded(c, expanded) { }
         render() {
             return (this.$render("i-panel", { class: index_css_1.customStyles },
                 this.$render("i-grid-layout", { templateColumns: ['3fr 4fr'], gap: { row: '1rem', column: '2rem' }, mediaQueries: [
@@ -549,11 +551,7 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                             this.$render("i-panel", { class: index_css_1.spinnerStyle })),
                         this.$render("i-vstack", { id: "pnlEmbed", width: "100%" }),
                         this.$render("i-vstack", { id: "pnlTransactions", visible: false, padding: { top: '0.5rem', bottom: '0.5rem', left: '0.5rem', right: '0.5rem' } },
-                            this.$render("i-hstack", { horizontalAlignment: "space-between", verticalAlignment: "center", padding: { top: '0.5rem', bottom: '0.5rem' }, class: "expanded pointer", onClick: this.toggleExpandablePanel },
-                                this.$render("i-label", { caption: 'Transactions', font: { size: '1rem' }, lineHeight: 1.3 }),
-                                this.$render("i-icon", { class: "expandable-icon", width: 20, height: 28, fill: Theme.text.primary, name: "angle-down" })),
-                            this.$render("i-panel", { class: index_css_1.expandablePanelStyle },
-                                this.$render("i-table", { id: "tableTransactions", columns: this.TransactionsTableColumns })))))));
+                            this.$render("i-scom-accordion", { id: "transAccordion", name: "Transactions", defaultExpanded: true, onChanged: this.onExpanded }))))));
         }
     };
     ScomFlow = __decorate([
