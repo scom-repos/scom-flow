@@ -2,6 +2,7 @@
 declare module "@scom/scom-flow/index.css.ts" {
     export const customStyles: string;
     export const spinnerStyle: string;
+    export const expandablePanelStyle: string;
 }
 /// <amd-module name="@scom/scom-flow/asset.ts" />
 declare module "@scom/scom-flow/asset.ts" {
@@ -102,6 +103,7 @@ declare module "@scom/scom-flow" {
     export default class ScomFlow extends Module {
         private pnlStep;
         private pnlEmbed;
+        private pnlTransactions;
         private flowImg;
         private lbDesc;
         private stepElms;
@@ -109,6 +111,8 @@ declare module "@scom/scom-flow" {
         private widgetModuleMap;
         private $eventBus;
         private steps;
+        private tableTransactions;
+        private TransactionsTableColumns;
         private _data;
         private state;
         onChanged: (target: Control, activeStep: number) => void;
@@ -140,7 +144,9 @@ declare module "@scom/scom-flow" {
             setData: (data: IFlowData) => Promise<void>;
         }[];
         init(): Promise<void>;
+        private registerEvents;
         private setThemeVar;
+        private toggleExpandablePanel;
         render(): any;
     }
 }

@@ -11,13 +11,17 @@ import {
   Image,
   Label,
   application,
-  IEventBus
+  IEventBus,
+  FormatUtils,
+  Icon,
+  Table
 } from '@ijstech/components';
-import { customStyles, spinnerStyle } from './index.css';
+import { customStyles, expandablePanelStyle, spinnerStyle } from './index.css';
 import asset from './asset';
 import { IFlowData, IOption, IStep, IWidgetData } from './interface';
 import { State } from './store/index';
 import { generateUUID } from './utils';
+import { INetwork, Utils } from '@ijstech/eth-wallet';
 
 const Theme = Styles.Theme.ThemeVars;
 
@@ -41,6 +45,7 @@ declare global {
 export default class ScomFlow extends Module {
   private pnlStep: Panel;
   private pnlEmbed: VStack;
+  private pnlTransactions: VStack;
   private flowImg: Image;
   private lbDesc: Label;
   private stepElms: HStack[] = [];
@@ -48,6 +53,71 @@ export default class ScomFlow extends Module {
   private widgetModuleMap: Map<number, Module> = new Map();
   private $eventBus: IEventBus;
   private steps: IStep[] = [];
+  private tableTransactions: Table;
+  private TransactionsTableColumns = [
+    {
+      title: 'Date',
+      fieldName: 'timestamp',
+      key: 'timestamp',
+      onRenderCell: (source: Control, columnData: number, rowData: any) => {
+        return FormatUtils.unixToFormattedDate(columnData);
+      }
+    },
+    {
+      title: 'Txn Hash',
+      fieldName: 'hash',
+      key: 'hash',
+      onRenderCell: async (source: Control, columnData: string, rowData: any) => {
+        const networkMap = application.store["networkMap"];
+        const networkInfo: INetwork = networkMap[rowData.toToken.chainId];
+        const caption = FormatUtils.truncateTxHash(columnData);
+        const url = networkInfo.blockExplorerUrls[0] + '/tx/' + columnData;
+        const label = new Label(undefined, {
+            caption: caption,
+            font: {size: '0.875rem'},
+            link: {
+              href: url,
+              target: '_blank',
+              font: {size: '0.875rem'}
+            },
+            tooltip: {
+              content: columnData
+            }
+        });
+
+        return label;
+      }
+    },
+    {
+      title: 'Action',
+      fieldName: 'desc',
+      key: 'desc'
+    },
+    {
+      title: 'Token In Amount',
+      fieldName: 'fromTokenAmount',
+      key: 'fromTokenAmount',
+      onRenderCell: (source: Control, columnData: string, rowData: any) => {
+        const fromToken = rowData.fromToken;
+        const fromTokenAmount = FormatUtils.formatNumber(Utils.fromDecimals(columnData, fromToken.decimals).toFixed(), {
+          decimalFigures: 4
+        });
+        return `${fromTokenAmount} ${fromToken.symbol}`;
+      }
+    },
+    {
+      title: 'Token Out Amount',
+      fieldName: 'toTokenAmount',
+      key: 'toTokenAmount',
+      onRenderCell: (source: Control, columnData: string, rowData: any) => {
+        const toToken = rowData.toToken;
+        const toTokenAmount = FormatUtils.formatNumber(Utils.fromDecimals(columnData, toToken.decimals).toFixed(), {
+          decimalFigures: 4
+        });
+        return `${toTokenAmount} ${toToken.symbol}`;
+      }
+    }
+  ];
 
   private _data: IFlowData = {
     activeStep: 0
@@ -224,6 +294,8 @@ export default class ScomFlow extends Module {
     this.widgetContainerMap = new Map();
     this.widgetModuleMap = new Map();
     this.stepElms = [];
+    this.tableTransactions.data = [];
+    this.pnlTransactions.visible = false;
     this.pnlStep.clearInnerHTML();
     this.pnlEmbed.clearInnerHTML();
   }
@@ -262,6 +334,8 @@ export default class ScomFlow extends Module {
     if (index > this.state.furthestStepIndex && !this.state.checkStep()) return;
     this.activeStep = index;
     const targetWidget = this.widgetModuleMap.get(index);
+    const stepInfo = this.steps[index];
+    this.pnlTransactions.visible = stepInfo.stage !== 'initialSetup';
     if (!targetWidget) {
       await this.renderEmbedElm(index);
     }
@@ -307,6 +381,10 @@ export default class ScomFlow extends Module {
     await this.setData({ description, img, option, widgets, activeStep });
     const themeVar = document.body.style.getPropertyValue('--theme');
     this.setThemeVar(themeVar);
+    this.registerEvents();
+  }
+
+  private registerEvents() {
     this.$eventBus.register(this, `${this.id}:nextStep`, async (data: any) => {
       let nextStep: number;
       let options: any;
@@ -339,11 +417,30 @@ export default class ScomFlow extends Module {
         await this.onSelectedStep(nextStep);
       }
     });
+    this.$eventBus.register(this, `${this.id}:addTransactions`, async (data: any) => {
+      if (!data.list) return;
+      const transactions = [...this.tableTransactions.data, ...data.list];
+      this.tableTransactions.data = transactions;
+    });
   }
 
   private setThemeVar(theme: string) {
     this.style.setProperty('--card-color-l', theme === 'light' ? '5%' : '95%');
     this.style.setProperty('--card-color-a', theme === 'light' ? '0.05' : '0.1');
+  }
+
+  private toggleExpandablePanel(c: Control) {
+    const icon: Icon = c.querySelector('i-icon.expandable-icon');
+    const contentPanel: Panel = c.parentNode.querySelector(`i-panel.${expandablePanelStyle}`);
+    if (c.classList.contains('expanded')) {
+      icon.name = 'angle-right';
+      contentPanel.visible = false;
+      c.classList.remove('expanded');
+    } else {
+      icon.name = 'angle-down';
+      contentPanel.visible = true;
+      c.classList.add('expanded');
+    }
   }
 
   render() {
@@ -385,7 +482,7 @@ export default class ScomFlow extends Module {
               />
             </i-vstack>
           </i-panel>
-          <i-panel
+          <i-vstack
             border={{style: 'none'}}
             maxWidth={'100%'}
             overflow={'hidden'}
@@ -402,7 +499,22 @@ export default class ScomFlow extends Module {
               <i-panel class={spinnerStyle}></i-panel>
             </i-vstack>
             <i-vstack id="pnlEmbed" width="100%"/>
-          </i-panel>
+            <i-vstack id="pnlTransactions" visible={false} padding={{ top: '0.5rem', bottom: '0.5rem', left: '0.5rem', right: '0.5rem' }}>
+              <i-hstack
+                horizontalAlignment="space-between"
+                verticalAlignment="center"
+                padding={{ top: '0.5rem', bottom: '0.5rem' }}
+                class="expanded pointer"
+                onClick={this.toggleExpandablePanel}
+              >
+                <i-label caption='Transactions' font={{ size: '1rem' }} lineHeight={1.3}></i-label>
+                <i-icon class="expandable-icon" width={20} height={28} fill={Theme.text.primary} name="angle-down"></i-icon>
+              </i-hstack>
+              <i-panel class={expandablePanelStyle}>
+                <i-table id="tableTransactions" columns={this.TransactionsTableColumns}></i-table>
+              </i-panel>   
+            </i-vstack>
+          </i-vstack>
         </i-grid-layout>
       </i-panel>
     )

@@ -21,7 +21,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 define("@scom/scom-flow/index.css.ts", ["require", "exports", "@ijstech/components"], function (require, exports, components_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.spinnerStyle = exports.customStyles = void 0;
+    exports.expandablePanelStyle = exports.spinnerStyle = exports.customStyles = void 0;
     const Theme = components_1.Styles.Theme.ThemeVars;
     exports.customStyles = components_1.Styles.style({
         $nest: {
@@ -69,6 +69,16 @@ define("@scom/scom-flow/index.css.ts", ["require", "exports", "@ijstech/componen
         borderTopColor: Theme.colors.primary.main,
         "animation": `${spin} 1s ease-in-out infinite`,
         "-webkit-animation": `${spin} 1s ease-in-out infinite`
+    });
+    exports.expandablePanelStyle = components_1.Styles.style({
+        $nest: {
+            'i-panel': {
+                border: 'none'
+            },
+            '#comboEmbedType .icon-btn': {
+                opacity: 0.5
+            }
+        }
     });
 });
 define("@scom/scom-flow/asset.ts", ["require", "exports", "@ijstech/components"], function (require, exports, components_2) {
@@ -158,7 +168,7 @@ define("@scom/scom-flow/utils/index.ts", ["require", "exports"], function (requi
     };
     exports.generateUUID = generateUUID;
 });
-define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/scom-flow/index.css.ts", "@scom/scom-flow/asset.ts", "@scom/scom-flow/store/index.ts", "@scom/scom-flow/utils/index.ts"], function (require, exports, components_3, index_css_1, asset_1, index_1, utils_1) {
+define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/scom-flow/index.css.ts", "@scom/scom-flow/asset.ts", "@scom/scom-flow/store/index.ts", "@scom/scom-flow/utils/index.ts", "@ijstech/eth-wallet"], function (require, exports, components_3, index_css_1, asset_1, index_1, utils_1, eth_wallet_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const Theme = components_3.Styles.Theme.ThemeVars;
@@ -169,6 +179,69 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             this.widgetContainerMap = new Map();
             this.widgetModuleMap = new Map();
             this.steps = [];
+            this.TransactionsTableColumns = [
+                {
+                    title: 'Date',
+                    fieldName: 'timestamp',
+                    key: 'timestamp',
+                    onRenderCell: (source, columnData, rowData) => {
+                        return components_3.FormatUtils.unixToFormattedDate(columnData);
+                    }
+                },
+                {
+                    title: 'Txn Hash',
+                    fieldName: 'hash',
+                    key: 'hash',
+                    onRenderCell: async (source, columnData, rowData) => {
+                        const networkMap = components_3.application.store["networkMap"];
+                        const networkInfo = networkMap[rowData.toToken.chainId];
+                        const caption = components_3.FormatUtils.truncateTxHash(columnData);
+                        const url = networkInfo.blockExplorerUrls[0] + '/tx/' + columnData;
+                        const label = new components_3.Label(undefined, {
+                            caption: caption,
+                            font: { size: '0.875rem' },
+                            link: {
+                                href: url,
+                                target: '_blank',
+                                font: { size: '0.875rem' }
+                            },
+                            tooltip: {
+                                content: columnData
+                            }
+                        });
+                        return label;
+                    }
+                },
+                {
+                    title: 'Action',
+                    fieldName: 'desc',
+                    key: 'desc'
+                },
+                {
+                    title: 'Token In Amount',
+                    fieldName: 'fromTokenAmount',
+                    key: 'fromTokenAmount',
+                    onRenderCell: (source, columnData, rowData) => {
+                        const fromToken = rowData.fromToken;
+                        const fromTokenAmount = components_3.FormatUtils.formatNumber(eth_wallet_1.Utils.fromDecimals(columnData, fromToken.decimals).toFixed(), {
+                            decimalFigures: 4
+                        });
+                        return `${fromTokenAmount} ${fromToken.symbol}`;
+                    }
+                },
+                {
+                    title: 'Token Out Amount',
+                    fieldName: 'toTokenAmount',
+                    key: 'toTokenAmount',
+                    onRenderCell: (source, columnData, rowData) => {
+                        const toToken = rowData.toToken;
+                        const toTokenAmount = components_3.FormatUtils.formatNumber(eth_wallet_1.Utils.fromDecimals(columnData, toToken.decimals).toFixed(), {
+                            decimalFigures: 4
+                        });
+                        return `${toTokenAmount} ${toToken.symbol}`;
+                    }
+                }
+            ];
             this._data = {
                 activeStep: 0
             };
@@ -320,6 +393,8 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             this.widgetContainerMap = new Map();
             this.widgetModuleMap = new Map();
             this.stepElms = [];
+            this.tableTransactions.data = [];
+            this.pnlTransactions.visible = false;
             this.pnlStep.clearInnerHTML();
             this.pnlEmbed.clearInnerHTML();
         }
@@ -352,6 +427,8 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                 return;
             this.activeStep = index;
             const targetWidget = this.widgetModuleMap.get(index);
+            const stepInfo = this.steps[index];
+            this.pnlTransactions.visible = stepInfo.stage !== 'initialSetup';
             if (!targetWidget) {
                 await this.renderEmbedElm(index);
             }
@@ -394,6 +471,9 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             await this.setData({ description, img, option, widgets, activeStep });
             const themeVar = document.body.style.getPropertyValue('--theme');
             this.setThemeVar(themeVar);
+            this.registerEvents();
+        }
+        registerEvents() {
             this.$eventBus.register(this, `${this.id}:nextStep`, async (data) => {
                 let nextStep;
                 let options;
@@ -422,10 +502,30 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                     await this.onSelectedStep(nextStep);
                 }
             });
+            this.$eventBus.register(this, `${this.id}:addTransactions`, async (data) => {
+                if (!data.list)
+                    return;
+                const transactions = [...this.tableTransactions.data, ...data.list];
+                this.tableTransactions.data = transactions;
+            });
         }
         setThemeVar(theme) {
             this.style.setProperty('--card-color-l', theme === 'light' ? '5%' : '95%');
             this.style.setProperty('--card-color-a', theme === 'light' ? '0.05' : '0.1');
+        }
+        toggleExpandablePanel(c) {
+            const icon = c.querySelector('i-icon.expandable-icon');
+            const contentPanel = c.parentNode.querySelector(`i-panel.${index_css_1.expandablePanelStyle}`);
+            if (c.classList.contains('expanded')) {
+                icon.name = 'angle-right';
+                contentPanel.visible = false;
+                c.classList.remove('expanded');
+            }
+            else {
+                icon.name = 'angle-down';
+                contentPanel.visible = true;
+                c.classList.add('expanded');
+            }
         }
         render() {
             return (this.$render("i-panel", { class: index_css_1.customStyles },
@@ -444,10 +544,16 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                                     this.$render("i-image", { id: "flowImg", url: asset_1.default.scom, width: 50, height: 50, display: "block" })),
                                 this.$render("i-label", { id: "lbDesc", caption: '', lineHeight: 1.5 })),
                             this.$render("i-vstack", { padding: { left: '0.5rem', right: '0.5rem', top: '0.5rem', bottom: '0.5rem' }, id: "pnlStep", gap: "0.5rem" }))),
-                    this.$render("i-panel", { border: { style: 'none' }, maxWidth: '100%', overflow: 'hidden', class: "shadow" },
+                    this.$render("i-vstack", { border: { style: 'none' }, maxWidth: '100%', overflow: 'hidden', class: "shadow" },
                         this.$render("i-vstack", { id: "pnlLoading", stack: { grow: '1' }, horizontalAlignment: "center", verticalAlignment: "center", padding: { top: "1rem", bottom: "1rem", left: "1rem", right: "1rem" }, visible: false },
                             this.$render("i-panel", { class: index_css_1.spinnerStyle })),
-                        this.$render("i-vstack", { id: "pnlEmbed", width: "100%" })))));
+                        this.$render("i-vstack", { id: "pnlEmbed", width: "100%" }),
+                        this.$render("i-vstack", { id: "pnlTransactions", visible: false, padding: { top: '0.5rem', bottom: '0.5rem', left: '0.5rem', right: '0.5rem' } },
+                            this.$render("i-hstack", { horizontalAlignment: "space-between", verticalAlignment: "center", padding: { top: '0.5rem', bottom: '0.5rem' }, class: "expanded pointer", onClick: this.toggleExpandablePanel },
+                                this.$render("i-label", { caption: 'Transactions', font: { size: '1rem' }, lineHeight: 1.3 }),
+                                this.$render("i-icon", { class: "expandable-icon", width: 20, height: 28, fill: Theme.text.primary, name: "angle-down" })),
+                            this.$render("i-panel", { class: index_css_1.expandablePanelStyle },
+                                this.$render("i-table", { id: "tableTransactions", columns: this.TransactionsTableColumns })))))));
         }
     };
     ScomFlow = __decorate([
