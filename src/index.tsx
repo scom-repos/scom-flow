@@ -296,7 +296,7 @@ export default class ScomFlow extends Module {
     this.widgetContainerMap = new Map();
     this.widgetModuleMap = new Map();
     this.stepElms = [];
-    this.tableTransactions.data = [];
+    if (this.tableTransactions) this.tableTransactions.data = [];
     this.pnlTransactions.visible = false;
     this.pnlStep.clearInnerHTML();
     this.pnlEmbed.clearInnerHTML();
@@ -373,8 +373,17 @@ export default class ScomFlow extends Module {
 
   async init() {
     super.init();
-    this.tableTransactions = <i-table id="tableTransactions" columns={this.TransactionsTableColumns}></i-table>;
-    this.transAccordion.addChild(this.tableTransactions);
+    this.transAccordion.setData({
+      items: [
+        {
+          name: 'Transactions',
+          defaultExpanded: true,
+          onRender: () => {
+            return <i-table id="tableTransactions" columns={this.TransactionsTableColumns}></i-table>
+          }
+        }
+      ]
+    })
     this.id = generateUUID();
     this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
     const description = this.getAttribute('description', true, '');
@@ -447,8 +456,6 @@ export default class ScomFlow extends Module {
   //   }
   // }
 
-  private onExpanded(c: Control, expanded: boolean) {}
-
   render() {
     return (
       <i-panel class={customStyles}>
@@ -508,9 +515,6 @@ export default class ScomFlow extends Module {
             <i-vstack id="pnlTransactions" visible={false} padding={{ top: '0.5rem', bottom: '0.5rem', left: '0.5rem', right: '0.5rem' }}>
               <i-scom-accordion
                 id="transAccordion"
-                name="Transactions"
-                defaultExpanded={true}
-                onChanged={this.onExpanded}
               ></i-scom-accordion>
               {/* <i-hstack
                 horizontalAlignment="space-between"
