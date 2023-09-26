@@ -112,6 +112,7 @@ declare module "@scom/scom-flow" {
         private $eventBus;
         private steps;
         private tableTransactions;
+        private transAccordion;
         private TransactionsTableColumns;
         private _data;
         private state;
@@ -146,7 +147,7 @@ declare module "@scom/scom-flow" {
         init(): Promise<void>;
         private registerEvents;
         private setThemeVar;
-        private toggleExpandablePanel;
+        private onExpanded;
         render(): any;
     }
 }
