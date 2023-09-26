@@ -17,7 +17,7 @@
   "dependencies": {
     "@ijstech/eth-contract": "^0.1.14",
     "@ijstech/eth-wallet": "^0.1.52",
-    "@scom/scom-accordion": "https://github.com/scom-repos/scom-accordion"
+     "@scom/scom-accordion": "^0.1.0"
   },
   "devDependencies": {
     "@ijstech/cli": "^0.1.26",
