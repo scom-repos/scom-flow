@@ -393,7 +393,8 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             this.widgetContainerMap = new Map();
             this.widgetModuleMap = new Map();
             this.stepElms = [];
-            this.tableTransactions.data = [];
+            if (this.tableTransactions)
+                this.tableTransactions.data = [];
             this.pnlTransactions.visible = false;
             this.pnlStep.clearInnerHTML();
             this.pnlEmbed.clearInnerHTML();
@@ -461,8 +462,17 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
         }
         async init() {
             super.init();
-            this.tableTransactions = this.$render("i-table", { id: "tableTransactions", columns: this.TransactionsTableColumns });
-            this.transAccordion.addChild(this.tableTransactions);
+            this.transAccordion.setData({
+                items: [
+                    {
+                        name: 'Transactions',
+                        defaultExpanded: true,
+                        onRender: () => {
+                            return this.$render("i-table", { id: "tableTransactions", columns: this.TransactionsTableColumns });
+                        }
+                    }
+                ]
+            });
             this.id = (0, utils_1.generateUUID)();
             this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
             const description = this.getAttribute('description', true, '');
@@ -528,7 +538,6 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
         //     c.classList.add('expanded');
         //   }
         // }
-        onExpanded(c, expanded) { }
         render() {
             return (this.$render("i-panel", { class: index_css_1.customStyles },
                 this.$render("i-grid-layout", { templateColumns: ['3fr 4fr'], gap: { row: '1rem', column: '2rem' }, mediaQueries: [
@@ -551,7 +560,7 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                             this.$render("i-panel", { class: index_css_1.spinnerStyle })),
                         this.$render("i-vstack", { id: "pnlEmbed", width: "100%" }),
                         this.$render("i-vstack", { id: "pnlTransactions", visible: false, padding: { top: '0.5rem', bottom: '0.5rem', left: '0.5rem', right: '0.5rem' } },
-                            this.$render("i-scom-accordion", { id: "transAccordion", name: "Transactions", defaultExpanded: true, onChanged: this.onExpanded }))))));
+                            this.$render("i-scom-accordion", { id: "transAccordion" }))))));
         }
     };
     ScomFlow = __decorate([

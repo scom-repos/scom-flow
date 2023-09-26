@@ -147,7 +147,6 @@ declare module "@scom/scom-flow" {
         init(): Promise<void>;
         private registerEvents;
         private setThemeVar;
-        private onExpanded;
         render(): any;
     }
 }

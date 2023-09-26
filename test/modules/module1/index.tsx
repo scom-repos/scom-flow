@@ -84,7 +84,7 @@ export default class Module1 extends Module {
             widgets: sampleData.widgets
         });
         this.elm.onChanged = this.onChanged.bind(this);
-        this.elm.updateStatus(0, true)
+        // this.elm.updateStatus(0, true)
     }
 
     render() {
