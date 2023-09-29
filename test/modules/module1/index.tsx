@@ -14,7 +14,8 @@ const sampleData = {
                 {
                     "tokensIn": [
                         {
-                            "address": "0x45eee762aaeA4e5ce317471BDa8782724972Ee19",
+                            // "address": "0x45eee762aaeA4e5ce317471BDa8782724972Ee19",
+                            "address": "0x3cb66f6057d80015D0cf7c4c4e00dfC79ff6c836",
                             "chainId": 97
                         },
                         {
@@ -26,7 +27,8 @@ const sampleData = {
                         }
                     ],
                     "tokenOut": {
-                        "address": "0x78d9D80E67bC80A11efbf84B7c8A65Da51a8EF3C",
+                        // "address": "0x78d9D80E67bC80A11efbf84B7c8A65Da51a8EF3C",
+                        "address": "0x1B23B0dBB8D142596443999Dd0197299Fa17eb03",
                         "chainId": 43113
                     }
                 }
@@ -75,7 +77,7 @@ export default class Module1 extends Module {
 
     async init() {
         super.init();
-        this.elm = (await application.createElement('scom-flow')) as ScomFlow;
+        this.elm = (await application.createElement('scom-flow', true)) as ScomFlow;
         this.panel.append(this.elm);
         await this.elm.setData({
             activeStep: 0,

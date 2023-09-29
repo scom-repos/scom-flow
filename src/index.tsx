@@ -27,6 +27,7 @@ import ScomAccordion  from '@scom/scom-accordion';
 const Theme = Styles.Theme.ThemeVars;
 
 interface ScomFlowElement extends ControlElement {
+  lazyLoad?: boolean;
   img?: string;
   description?: string;
   option?: IOption;
@@ -91,32 +92,40 @@ export default class ScomFlow extends Module {
       }
     },
     {
-      title: 'Action',
+      title: 'Description',
       fieldName: 'desc',
       key: 'desc'
     },
     {
-      title: 'Token In Amount',
-      fieldName: 'fromTokenAmount',
-      key: 'fromTokenAmount',
+      title: 'Token Amounts',
+      fieldName: '',
+      key: '',
       onRenderCell: (source: Control, columnData: string, rowData: any) => {
+        console.log('rowData', rowData)
+        const vstack = new VStack();
         const fromToken = rowData.fromToken;
-        const fromTokenAmount = FormatUtils.formatNumber(Utils.fromDecimals(columnData, fromToken.decimals).toFixed(), {
-          decimalFigures: 4
-        });
-        return `${fromTokenAmount} ${fromToken.symbol}`;
-      }
-    },
-    {
-      title: 'Token Out Amount',
-      fieldName: 'toTokenAmount',
-      key: 'toTokenAmount',
-      onRenderCell: (source: Control, columnData: string, rowData: any) => {
+        if (fromToken) {
+          const fromTokenAmount = FormatUtils.formatNumber(Utils.fromDecimals(rowData.fromTokenAmount, fromToken.decimals).toFixed(), {
+            decimalFigures: 4
+          });
+          const fromTokenLabel = new Label(undefined, {
+            caption: `${fromTokenAmount} ${fromToken.symbol}`,
+            font: {size: '0.875rem'}
+          });
+          vstack.append(fromTokenLabel);
+        }
         const toToken = rowData.toToken;
-        const toTokenAmount = FormatUtils.formatNumber(Utils.fromDecimals(columnData, toToken.decimals).toFixed(), {
-          decimalFigures: 4
-        });
-        return `${toTokenAmount} ${toToken.symbol}`;
+        if (toToken) {
+          const toTokenAmount = FormatUtils.formatNumber(Utils.fromDecimals(rowData.toTokenAmount, toToken.decimals).toFixed(), {
+            decimalFigures: 4
+          });
+          const toTokenLabel = new Label(undefined, {
+            caption: `${toTokenAmount} ${toToken.symbol}`,
+            font: {size: '0.875rem'}
+          });
+          vstack.append(toTokenLabel);
+        }
+        return vstack;
       }
     }
   ];
@@ -227,6 +236,18 @@ export default class ScomFlow extends Module {
     return steps;
   }
   async setData(data: IFlowData) {
+    await this.transAccordion.setData({
+      items: [
+        {
+          name: 'Transactions',
+          defaultExpanded: true,
+          onRender: () => {
+            return <i-table id="tableTransactions" columns={this.TransactionsTableColumns}></i-table>
+          }
+        }
+      ]
+    })
+    this.tableTransactions.data = [];
     this._data = data;
     this.steps = this.calculateSteps(this._data.widgets);
     this.state = new State({steps: this.steps ?? [], activeStep: this._data.activeStep ?? 0});
@@ -373,25 +394,17 @@ export default class ScomFlow extends Module {
 
   async init() {
     super.init();
-    this.transAccordion.setData({
-      items: [
-        {
-          name: 'Transactions',
-          defaultExpanded: true,
-          onRender: () => {
-            return <i-table id="tableTransactions" columns={this.TransactionsTableColumns}></i-table>
-          }
-        }
-      ]
-    })
     this.id = generateUUID();
     this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
-    const description = this.getAttribute('description', true, '');
-    const activeStep = this.getAttribute('activeStep', true, 0);
-    const img = this.getAttribute('img', true, '');
-    const option = this.getAttribute('option', true, 'manual');
-    const widgets = this.getAttribute('widgets', true, []);
-    await this.setData({ description, img, option, widgets, activeStep });
+    const lazyLoad = this.getAttribute('lazyLoad', true, false);
+    if (!lazyLoad) {
+      const description = this.getAttribute('description', true, '');
+      const activeStep = this.getAttribute('activeStep', true, 0);
+      const img = this.getAttribute('img', true, '');
+      const option = this.getAttribute('option', true, 'manual');
+      const widgets = this.getAttribute('widgets', true, []);
+      await this.setData({ description, img, option, widgets, activeStep });
+    }
     const themeVar = document.body.style.getPropertyValue('--theme');
     this.setThemeVar(themeVar);
     this.registerEvents();

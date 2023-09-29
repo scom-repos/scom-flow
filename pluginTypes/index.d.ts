@@ -87,6 +87,7 @@ declare module "@scom/scom-flow" {
     import { Container, Control, ControlElement, Module } from '@ijstech/components';
     import { IFlowData, IOption, IWidgetData } from "@scom/scom-flow/interface.ts";
     interface ScomFlowElement extends ControlElement {
+        lazyLoad?: boolean;
         img?: string;
         description?: string;
         option?: IOption;

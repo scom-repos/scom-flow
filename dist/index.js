@@ -213,32 +213,40 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                     }
                 },
                 {
-                    title: 'Action',
+                    title: 'Description',
                     fieldName: 'desc',
                     key: 'desc'
                 },
                 {
-                    title: 'Token In Amount',
-                    fieldName: 'fromTokenAmount',
-                    key: 'fromTokenAmount',
+                    title: 'Token Amounts',
+                    fieldName: '',
+                    key: '',
                     onRenderCell: (source, columnData, rowData) => {
+                        console.log('rowData', rowData);
+                        const vstack = new components_3.VStack();
                         const fromToken = rowData.fromToken;
-                        const fromTokenAmount = components_3.FormatUtils.formatNumber(eth_wallet_1.Utils.fromDecimals(columnData, fromToken.decimals).toFixed(), {
-                            decimalFigures: 4
-                        });
-                        return `${fromTokenAmount} ${fromToken.symbol}`;
-                    }
-                },
-                {
-                    title: 'Token Out Amount',
-                    fieldName: 'toTokenAmount',
-                    key: 'toTokenAmount',
-                    onRenderCell: (source, columnData, rowData) => {
+                        if (fromToken) {
+                            const fromTokenAmount = components_3.FormatUtils.formatNumber(eth_wallet_1.Utils.fromDecimals(rowData.fromTokenAmount, fromToken.decimals).toFixed(), {
+                                decimalFigures: 4
+                            });
+                            const fromTokenLabel = new components_3.Label(undefined, {
+                                caption: `${fromTokenAmount} ${fromToken.symbol}`,
+                                font: { size: '0.875rem' }
+                            });
+                            vstack.append(fromTokenLabel);
+                        }
                         const toToken = rowData.toToken;
-                        const toTokenAmount = components_3.FormatUtils.formatNumber(eth_wallet_1.Utils.fromDecimals(columnData, toToken.decimals).toFixed(), {
-                            decimalFigures: 4
-                        });
-                        return `${toTokenAmount} ${toToken.symbol}`;
+                        if (toToken) {
+                            const toTokenAmount = components_3.FormatUtils.formatNumber(eth_wallet_1.Utils.fromDecimals(rowData.toTokenAmount, toToken.decimals).toFixed(), {
+                                decimalFigures: 4
+                            });
+                            const toTokenLabel = new components_3.Label(undefined, {
+                                caption: `${toTokenAmount} ${toToken.symbol}`,
+                                font: { size: '0.875rem' }
+                            });
+                            vstack.append(toTokenLabel);
+                        }
+                        return vstack;
                     }
                 }
             ];
@@ -344,6 +352,18 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
         }
         async setData(data) {
             var _a, _b;
+            await this.transAccordion.setData({
+                items: [
+                    {
+                        name: 'Transactions',
+                        defaultExpanded: true,
+                        onRender: () => {
+                            return this.$render("i-table", { id: "tableTransactions", columns: this.TransactionsTableColumns });
+                        }
+                    }
+                ]
+            });
+            this.tableTransactions.data = [];
             this._data = data;
             this.steps = this.calculateSteps(this._data.widgets);
             this.state = new index_1.State({ steps: (_a = this.steps) !== null && _a !== void 0 ? _a : [], activeStep: (_b = this._data.activeStep) !== null && _b !== void 0 ? _b : 0 });
@@ -462,25 +482,17 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
         }
         async init() {
             super.init();
-            this.transAccordion.setData({
-                items: [
-                    {
-                        name: 'Transactions',
-                        defaultExpanded: true,
-                        onRender: () => {
-                            return this.$render("i-table", { id: "tableTransactions", columns: this.TransactionsTableColumns });
-                        }
-                    }
-                ]
-            });
             this.id = (0, utils_1.generateUUID)();
             this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
-            const description = this.getAttribute('description', true, '');
-            const activeStep = this.getAttribute('activeStep', true, 0);
-            const img = this.getAttribute('img', true, '');
-            const option = this.getAttribute('option', true, 'manual');
-            const widgets = this.getAttribute('widgets', true, []);
-            await this.setData({ description, img, option, widgets, activeStep });
+            const lazyLoad = this.getAttribute('lazyLoad', true, false);
+            if (!lazyLoad) {
+                const description = this.getAttribute('description', true, '');
+                const activeStep = this.getAttribute('activeStep', true, 0);
+                const img = this.getAttribute('img', true, '');
+                const option = this.getAttribute('option', true, 'manual');
+                const widgets = this.getAttribute('widgets', true, []);
+                await this.setData({ description, img, option, widgets, activeStep });
+            }
             const themeVar = document.body.style.getPropertyValue('--theme');
             this.setThemeVar(themeVar);
             this.registerEvents();
