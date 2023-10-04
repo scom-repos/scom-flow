@@ -405,7 +405,9 @@ export default class ScomFlow extends Module {
       const img = this.getAttribute('img', true, '');
       const option = this.getAttribute('option', true, 'manual');
       const widgets = this.getAttribute('widgets', true, []);
-      await this.setData({ description, img, option, widgets, activeStep });
+      if (widgets?.length > 0) {
+        await this.setData({ description, img, option, widgets, activeStep });
+      }
     }
     const themeVar = document.body.style.getPropertyValue('--theme');
     this.setThemeVar(themeVar);
