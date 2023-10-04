@@ -72,7 +72,9 @@ export default class ScomFlow extends Module {
       key: 'hash',
       onRenderCell: async (source: Control, columnData: string, rowData: any) => {
         const networkMap = application.store["networkMap"];
-        const networkInfo: INetwork = networkMap[rowData.toToken.chainId];
+        const vstack = new VStack();
+        const token = rowData.toToken || rowData.fromToken; //FIXME: toToken or fromToken
+        const networkInfo: INetwork = networkMap[token.chainId];
         const caption = FormatUtils.truncateTxHash(columnData);
         const url = networkInfo.blockExplorerUrls[0] + '/tx/' + columnData;
         const label = new Label(undefined, {
@@ -87,8 +89,8 @@ export default class ScomFlow extends Module {
               content: columnData
             }
         });
-
-        return label;
+        vstack.append(label);
+        return vstack;
       }
     },
     {

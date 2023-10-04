@@ -194,7 +194,9 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                     key: 'hash',
                     onRenderCell: async (source, columnData, rowData) => {
                         const networkMap = components_3.application.store["networkMap"];
-                        const networkInfo = networkMap[rowData.toToken.chainId];
+                        const vstack = new components_3.VStack();
+                        const token = rowData.toToken || rowData.fromToken; //FIXME: toToken or fromToken
+                        const networkInfo = networkMap[token.chainId];
                         const caption = components_3.FormatUtils.truncateTxHash(columnData);
                         const url = networkInfo.blockExplorerUrls[0] + '/tx/' + columnData;
                         const label = new components_3.Label(undefined, {
@@ -209,7 +211,8 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                                 content: columnData
                             }
                         });
-                        return label;
+                        vstack.append(label);
+                        return vstack;
                     }
                 },
                 {

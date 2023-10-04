@@ -37,13 +37,13 @@ const sampleData = {
                 "properties": {
                     "chainId": 43113,
                     "name": "Staking",
-                    "desc": "Earn OSWAP",
+                    "desc": "Earn PROJECT",
                     "showContractLink": true,
                     "staking": {
-                        "address": "0xb9a237fbd7ddc2cd2bfafd90da97a62c2ca42c9f",
+                        "address": "0x96148934645c179A5D1C09082D074CBA779B573e",
                         "lockTokenType": 0,
                         "rewards": {
-                            "address": "0x1754f919d45e5737eb03ee148e94bee135f2ed6d",
+                            "address": "0x3c9dfe0dead5d63427fd66364966f34c1426bc6e",
                             "isCommonStartDate": false
                         }
                     },
@@ -81,7 +81,7 @@ export default class Module1 extends Module {
         this.panel.append(this.elm);
         await this.elm.setData({
             activeStep: 0,
-            description: 'Stake OSWAP to earn more OSWAP',
+            description: 'Stake PROJECT to earn more PROJECT',
             img: 'https://ipfs.scom.dev/ipfs/bafkreihusulbamxr2ti6s3hlciyufobsyicgoslbdhk5qkjdhfayotd6ym',
             widgets: sampleData.widgets
         });
