@@ -173,8 +173,8 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
     Object.defineProperty(exports, "__esModule", { value: true });
     const Theme = components_3.Styles.Theme.ThemeVars;
     let ScomFlow = class ScomFlow extends components_3.Module {
-        constructor(parent, options) {
-            super(parent, options);
+        constructor() {
+            super(...arguments);
             this.stepElms = [];
             this.widgetContainerMap = new Map();
             this.widgetModuleMap = new Map();
@@ -256,7 +256,6 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             this._data = {
                 activeStep: 0
             };
-            this.$eventBus = components_3.application.EventBus;
         }
         static async create(options, parent) {
             let self = new this(parent, options);
@@ -422,6 +421,40 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             this.pnlStep.clearInnerHTML();
             this.pnlEmbed.clearInnerHTML();
         }
+        async handleNextStep(data) {
+            let nextStep;
+            let options;
+            this.steps.forEach((step, index) => {
+                this.updateStatus(index, true);
+            });
+            if (data.tokenAcquisition) {
+                nextStep = this.state.steps.findIndex((step, index) => step.stage === 'tokenAcquisition' && index > this.activeStep);
+                options = {
+                    properties: data.executionProperties,
+                    onDone: async (target) => {
+                        console.log('Completed all steps', target);
+                        await this.onSelectedStep(this.activeStep + 1);
+                    }
+                };
+            }
+            else {
+                nextStep = this.state.steps.findIndex((step, index) => step.stage === 'execution' && index > this.activeStep);
+                options = {
+                    properties: data.executionProperties
+                };
+            }
+            this.steps[nextStep].widgetData = Object.assign(Object.assign({}, this.steps[nextStep].widgetData), { options: options, tokenRequirements: data.tokenRequirements });
+            console.log('nextStep', data);
+            if (nextStep) {
+                await this.onSelectedStep(nextStep);
+            }
+        }
+        async handleAddTransactions(data) {
+            if (!data.list)
+                return;
+            const transactions = [...this.tableTransactions.data, ...data.list];
+            this.tableTransactions.data = transactions;
+        }
         async renderEmbedElm(step) {
             const widgetContainer = this.widgetContainerMap.get(step);
             if (!widgetContainer)
@@ -433,7 +466,7 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             const flowWidget = await components_3.application.createElement(widgetData.name);
             if (flowWidget) {
                 flowWidget.id = (0, utils_1.generateUUID)();
-                const flowWidgetObj = await flowWidget.handleFlowStage(widgetContainer, stepInfo.stage, Object.assign(Object.assign({}, widgetData.options), { invokerId: this.id, tokenRequirements: widgetData.tokenRequirements, initialSetupData: widgetData.initialSetupData }));
+                const flowWidgetObj = await flowWidget.handleFlowStage(widgetContainer, stepInfo.stage, Object.assign(Object.assign({}, widgetData.options), { tokenRequirements: widgetData.tokenRequirements, initialSetupData: widgetData.initialSetupData, onNextStep: this.handleNextStep.bind(this), onAddTransactions: this.handleAddTransactions.bind(this) }));
                 if (flowWidgetObj) {
                     this.widgetModuleMap.set(step, flowWidgetObj.widget);
                 }
@@ -485,7 +518,6 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
         }
         async init() {
             super.init();
-            this.id = (0, utils_1.generateUUID)();
             this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
             const lazyLoad = this.getAttribute('lazyLoad', true, false);
             if (!lazyLoad) {
@@ -500,43 +532,6 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             }
             const themeVar = document.body.style.getPropertyValue('--theme');
             this.setThemeVar(themeVar);
-            this.registerEvents();
-        }
-        registerEvents() {
-            this.$eventBus.register(this, `${this.id}:nextStep`, async (data) => {
-                let nextStep;
-                let options;
-                this.steps.forEach((step, index) => {
-                    this.updateStatus(index, true);
-                });
-                if (data.tokenAcquisition) {
-                    nextStep = this.state.steps.findIndex((step, index) => step.stage === 'tokenAcquisition' && index > this.activeStep);
-                    options = {
-                        properties: data.executionProperties,
-                        onDone: async (target) => {
-                            console.log('Completed all steps', target);
-                            await this.onSelectedStep(this.activeStep + 1);
-                        }
-                    };
-                }
-                else {
-                    nextStep = this.state.steps.findIndex((step, index) => step.stage === 'execution' && index > this.activeStep);
-                    options = {
-                        properties: data.executionProperties
-                    };
-                }
-                this.steps[nextStep].widgetData = Object.assign(Object.assign({}, this.steps[nextStep].widgetData), { options: options, tokenRequirements: data.tokenRequirements });
-                console.log('nextStep', data);
-                if (nextStep) {
-                    await this.onSelectedStep(nextStep);
-                }
-            });
-            this.$eventBus.register(this, `${this.id}:addTransactions`, async (data) => {
-                if (!data.list)
-                    return;
-                const transactions = [...this.tableTransactions.data, ...data.list];
-                this.tableTransactions.data = transactions;
-            });
         }
         setThemeVar(theme) {
             this.style.setProperty('--card-color-l', theme === 'light' ? '5%' : '95%');

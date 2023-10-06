@@ -110,7 +110,6 @@ declare module "@scom/scom-flow" {
         private stepElms;
         private widgetContainerMap;
         private widgetModuleMap;
-        private $eventBus;
         private steps;
         private tableTransactions;
         private transAccordion;
@@ -118,7 +117,6 @@ declare module "@scom/scom-flow" {
         private _data;
         private state;
         onChanged: (target: Control, activeStep: number) => void;
-        constructor(parent?: Container, options?: any);
         static create(options?: ScomFlowElement, parent?: Container): Promise<ScomFlow>;
         get description(): string;
         set description(value: string);
@@ -135,6 +133,8 @@ declare module "@scom/scom-flow" {
         private renderOption;
         private renderSteps;
         private resetData;
+        private handleNextStep;
+        private handleAddTransactions;
         private renderEmbedElm;
         private isStepSelectable;
         private onSelectedStep;
@@ -146,7 +146,6 @@ declare module "@scom/scom-flow" {
             setData: (data: IFlowData) => Promise<void>;
         }[];
         init(): Promise<void>;
-        private registerEvents;
         private setThemeVar;
         render(): any;
     }

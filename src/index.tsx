@@ -53,7 +53,6 @@ export default class ScomFlow extends Module {
   private stepElms: HStack[] = [];
   private widgetContainerMap: Map<number, Module> = new Map();
   private widgetModuleMap: Map<number, Module> = new Map();
-  private $eventBus: IEventBus;
   private steps: IStep[] = [];
   private tableTransactions: Table;
   private transAccordion: ScomAccordion;
@@ -138,11 +137,6 @@ export default class ScomFlow extends Module {
   private state: State;
 
   public onChanged: (target: Control, activeStep: number) => void;
-
-  constructor(parent?: Container, options?: any) {
-    super(parent, options);
-    this.$eventBus = application.EventBus;
-  }
 
   static async create(options?: ScomFlowElement, parent?: Container) {
     let self = new this(parent, options);
@@ -325,6 +319,45 @@ export default class ScomFlow extends Module {
     this.pnlEmbed.clearInnerHTML();
   }
 
+  private async handleNextStep(data: any) {
+    let nextStep: number;
+    let options: any;
+    this.steps.forEach((step, index) => {
+      this.updateStatus(index, true);
+    });
+    if (data.tokenAcquisition) {
+      nextStep = this.state.steps.findIndex((step, index) => step.stage === 'tokenAcquisition' && index > this.activeStep);
+      options = {
+        properties: data.executionProperties,
+        onDone: async (target: Control) => {
+            console.log('Completed all steps', target)
+            await this.onSelectedStep(this.activeStep + 1);
+        }
+      }
+    }
+    else {
+      nextStep = this.state.steps.findIndex((step, index)  => step.stage === 'execution' && index > this.activeStep);
+      options = {
+        properties: data.executionProperties
+      }
+    }
+    this.steps[nextStep].widgetData = {
+      ...this.steps[nextStep].widgetData,
+      options: options,
+      tokenRequirements: data.tokenRequirements
+    }
+    console.log('nextStep', data);
+    if (nextStep) {
+      await this.onSelectedStep(nextStep);
+    }
+  }
+
+  private async handleAddTransactions(data: any) {
+    if (!data.list) return;
+    const transactions = [...this.tableTransactions.data, ...data.list];
+    this.tableTransactions.data = transactions;
+  }
+
   private async renderEmbedElm(step: number) {
     const widgetContainer = this.widgetContainerMap.get(step);
     if (!widgetContainer) return;
@@ -337,9 +370,10 @@ export default class ScomFlow extends Module {
       flowWidget.id = generateUUID();
       const flowWidgetObj = await flowWidget.handleFlowStage(widgetContainer, stepInfo.stage, {
         ...widgetData.options,
-        invokerId: this.id,
         tokenRequirements: widgetData.tokenRequirements,
-        initialSetupData: widgetData.initialSetupData
+        initialSetupData: widgetData.initialSetupData,
+        onNextStep: this.handleNextStep.bind(this),
+        onAddTransactions: this.handleAddTransactions.bind(this)
       });
       if (flowWidgetObj) {
         this.widgetModuleMap.set(step, flowWidgetObj.widget);
@@ -396,7 +430,6 @@ export default class ScomFlow extends Module {
 
   async init() {
     super.init();
-    this.id = generateUUID();
     this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
     const lazyLoad = this.getAttribute('lazyLoad', true, false);
     if (!lazyLoad) {
@@ -411,47 +444,6 @@ export default class ScomFlow extends Module {
     }
     const themeVar = document.body.style.getPropertyValue('--theme');
     this.setThemeVar(themeVar);
-    this.registerEvents();
-  }
-
-  private registerEvents() {
-    this.$eventBus.register(this, `${this.id}:nextStep`, async (data: any) => {
-      let nextStep: number;
-      let options: any;
-      this.steps.forEach((step, index) => {
-        this.updateStatus(index, true);
-      });
-      if (data.tokenAcquisition) {
-        nextStep = this.state.steps.findIndex((step, index) => step.stage === 'tokenAcquisition' && index > this.activeStep);
-        options = {
-          properties: data.executionProperties,
-          onDone: async (target: Control) => {
-              console.log('Completed all steps', target)
-              await this.onSelectedStep(this.activeStep + 1);
-          }
-        }
-      }
-      else {
-        nextStep = this.state.steps.findIndex((step, index)  => step.stage === 'execution' && index > this.activeStep);
-        options = {
-          properties: data.executionProperties
-        }
-      }
-      this.steps[nextStep].widgetData = {
-        ...this.steps[nextStep].widgetData,
-        options: options,
-        tokenRequirements: data.tokenRequirements
-      }
-      console.log('nextStep', data);
-      if (nextStep) {
-        await this.onSelectedStep(nextStep);
-      }
-    });
-    this.$eventBus.register(this, `${this.id}:addTransactions`, async (data: any) => {
-      if (!data.list) return;
-      const transactions = [...this.tableTransactions.data, ...data.list];
-      this.tableTransactions.data = transactions;
-    });
   }
 
   private setThemeVar(theme: string) {
