@@ -168,7 +168,7 @@ define("@scom/scom-flow/utils/index.ts", ["require", "exports"], function (requi
     };
     exports.generateUUID = generateUUID;
 });
-define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/scom-flow/index.css.ts", "@scom/scom-flow/asset.ts", "@scom/scom-flow/store/index.ts", "@scom/scom-flow/utils/index.ts", "@ijstech/eth-wallet"], function (require, exports, components_3, index_css_1, asset_1, index_1, utils_1, eth_wallet_1) {
+define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/scom-flow/index.css.ts", "@scom/scom-flow/asset.ts", "@scom/scom-flow/store/index.ts", "@scom/scom-flow/utils/index.ts", "@ijstech/eth-wallet", "@scom/scom-token-list"], function (require, exports, components_3, index_css_1, asset_1, index_1, utils_1, eth_wallet_1, scom_token_list_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const Theme = components_3.Styles.Theme.ThemeVars;
@@ -332,6 +332,7 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                         stage: 'tokenAcquisition',
                         widgetData: {
                             name: 'scom-token-acquisition',
+                            options: widget.options,
                             tokenRequirements: widget.tokenRequirements
                         }
                     });
@@ -370,23 +371,35 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             this.steps = this.calculateSteps(this._data.widgets);
             this.state = new index_1.State({ steps: (_a = this.steps) !== null && _a !== void 0 ? _a : [], activeStep: (_b = this._data.activeStep) !== null && _b !== void 0 ? _b : 0 });
             this.state.steps = this.steps;
-            await this.renderUI();
+            await this.initializeUI();
         }
         getData() {
             return this._data;
         }
-        async renderUI() {
+        async initializeUI() {
             if (this.flowImg)
                 this.flowImg.url = this.img;
             if (this.lbDesc)
                 this.lbDesc.caption = this.description;
             this.renderOption();
+            this.widgetContainerMap = new Map();
+            this.widgetModuleMap = new Map();
+            this.stepElms = [];
+            if (this.tableTransactions)
+                this.tableTransactions.data = [];
+            this.pnlTransactions.visible = false;
+            this.pnlStep.clearInnerHTML();
+            this.pnlEmbed.clearInnerHTML();
             await this.renderSteps();
+            const flowWidget = await this.renderEmbedElm(this.activeStep);
+            const stepInfo = this.steps[this.activeStep];
+            const widgetData = (stepInfo === null || stepInfo === void 0 ? void 0 : stepInfo.widgetData) || {};
+            await this.updateTokenBalances(widgetData.tokenRequirements);
+            const flowWidgetObj = await this.handleFlowStage(this.activeStep, flowWidget, false);
         }
         renderOption() { }
         async renderSteps() {
             var _a, _b;
-            this.resetData();
             for (let i = 0; i < this.steps.length; i++) {
                 const step = this.steps[i];
                 const item = (this.$render("i-hstack", { verticalAlignment: "center", horizontalAlignment: "space-between", gap: '1rem', padding: { left: '1rem', right: '1.5rem', top: '1rem', bottom: '1rem' }, class: 'flow-step' + (i === this.activeStep ? ' --active' : ''), 
@@ -409,17 +422,34 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                 this.pnlEmbed.appendChild(contentPanel);
                 this.widgetContainerMap.set(i, contentPanel);
             }
-            await this.renderEmbedElm(this.activeStep);
         }
-        resetData() {
-            this.widgetContainerMap = new Map();
-            this.widgetModuleMap = new Map();
-            this.stepElms = [];
-            if (this.tableTransactions)
-                this.tableTransactions.data = [];
-            this.pnlTransactions.visible = false;
-            this.pnlStep.clearInnerHTML();
-            this.pnlEmbed.clearInnerHTML();
+        async updateTokenBalances(tokenRequirements) {
+            let chainIds = new Set();
+            if (tokenRequirements) {
+                for (let tokenRequirement of tokenRequirements) {
+                    chainIds.add(tokenRequirement.tokenOut.chainId);
+                    tokenRequirement.tokensIn.forEach(token => {
+                        chainIds.add(token.chainId);
+                    });
+                }
+            }
+            for (let chainId of chainIds) {
+                await scom_token_list_1.tokenStore.updateTokenBalancesByChainId(chainId);
+            }
+        }
+        checkIfBalancesSufficient(tokenRequirements) {
+            if (tokenRequirements) {
+                for (let tokenRequirement of tokenRequirements) {
+                    const tokenOut = tokenRequirement.tokenOut;
+                    const tokenOutAddress = tokenOut.address ? tokenOut.address.toLowerCase() : scom_token_list_1.ChainNativeTokenByChainId[tokenOut.chainId].symbol;
+                    const tokenBalances = scom_token_list_1.tokenStore.getTokenBalancesByChainId(tokenOut.chainId);
+                    const tokenOutBalance = tokenBalances[tokenOutAddress];
+                    const isBalanceSufficient = new eth_wallet_1.BigNumber(tokenOutBalance).gte(tokenOut.amount);
+                    if (!isBalanceSufficient)
+                        return false;
+                }
+            }
+            return true;
         }
         async handleNextStep(data) {
             let nextStep;
@@ -427,13 +457,14 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             this.steps.forEach((step, index) => {
                 this.updateStatus(index, true);
             });
-            if (data.tokenAcquisition) {
+            const balancesSufficient = this.checkIfBalancesSufficient(data.tokenRequirements);
+            if (!balancesSufficient) {
                 nextStep = this.state.steps.findIndex((step, index) => step.stage === 'tokenAcquisition' && index > this.activeStep);
                 options = {
                     properties: data.executionProperties,
                     onDone: async (target) => {
                         console.log('Completed all steps', target);
-                        await this.onSelectedStep(this.activeStep + 1);
+                        await this.changeStep(this.activeStep + 1, true);
                     }
                 };
             }
@@ -446,7 +477,7 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             this.steps[nextStep].widgetData = Object.assign(Object.assign({}, this.steps[nextStep].widgetData), { options: options, tokenRequirements: data.tokenRequirements });
             console.log('nextStep', data);
             if (nextStep) {
-                await this.onSelectedStep(nextStep);
+                await this.changeStep(nextStep, false);
             }
         }
         async handleAddTransactions(data) {
@@ -454,6 +485,16 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                 return;
             const transactions = [...this.tableTransactions.data, ...data.list];
             this.tableTransactions.data = transactions;
+        }
+        async handleFlowStage(step, flowWidget, isWidgetConnected) {
+            const widgetContainer = this.widgetContainerMap.get(step);
+            const stepInfo = this.steps[step];
+            const widgetData = (stepInfo === null || stepInfo === void 0 ? void 0 : stepInfo.widgetData) || {};
+            const flowWidgetObj = await flowWidget.handleFlowStage(widgetContainer, stepInfo.stage, Object.assign(Object.assign({}, widgetData.options), { isWidgetConnected: isWidgetConnected, tokenRequirements: widgetData.tokenRequirements, initialSetupData: widgetData.initialSetupData, onNextStep: this.handleNextStep.bind(this), onAddTransactions: this.handleAddTransactions.bind(this) }));
+            if (flowWidgetObj) {
+                this.widgetModuleMap.set(step, flowWidgetObj.widget);
+            }
+            return flowWidgetObj;
         }
         async renderEmbedElm(step) {
             const widgetContainer = this.widgetContainerMap.get(step);
@@ -463,34 +504,37 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             widgetContainer.visible = true;
             const stepInfo = this.steps[step];
             const widgetData = (stepInfo === null || stepInfo === void 0 ? void 0 : stepInfo.widgetData) || {};
-            const flowWidget = await components_3.application.createElement(widgetData.name);
+            let flowWidget = await components_3.application.createElement(widgetData.name);
             if (flowWidget) {
                 flowWidget.id = (0, utils_1.generateUUID)();
-                const flowWidgetObj = await flowWidget.handleFlowStage(widgetContainer, stepInfo.stage, Object.assign(Object.assign({}, widgetData.options), { tokenRequirements: widgetData.tokenRequirements, initialSetupData: widgetData.initialSetupData, onNextStep: this.handleNextStep.bind(this), onAddTransactions: this.handleAddTransactions.bind(this) }));
-                if (flowWidgetObj) {
-                    this.widgetModuleMap.set(step, flowWidgetObj.widget);
-                }
-                // For Test
-                // if (widgetData.name === 'scom-token-acquisition') {
-                //   flowWidgetObj.widget.onUpdateStatus();
-                // }
             }
+            return flowWidget;
         }
         isStepSelectable(index) {
             return index <= this.state.furthestStepIndex;
         }
         async onSelectedStep(index) {
+            await this.changeStep(index, true);
+            if (this.onChanged)
+                this.onChanged(this, index);
+        }
+        async changeStep(index, isUserTriggered) {
             if (index > this.state.furthestStepIndex && !this.state.checkStep())
                 return;
             this.activeStep = index;
-            const targetWidget = this.widgetModuleMap.get(index);
             const stepInfo = this.steps[index];
             this.pnlTransactions.visible = stepInfo.stage !== 'initialSetup';
-            if (!targetWidget) {
-                await this.renderEmbedElm(index);
+            let flowWidget = this.widgetModuleMap.get(this.activeStep);
+            const widgetData = (stepInfo === null || stepInfo === void 0 ? void 0 : stepInfo.widgetData) || {};
+            await this.updateTokenBalances(widgetData.tokenRequirements);
+            if (flowWidget) {
+                await this.handleFlowStage(this.activeStep, flowWidget, true);
             }
-            if (this.onChanged)
-                this.onChanged(this, this.activeStep);
+            else {
+                flowWidget = await this.renderEmbedElm(index);
+                if (flowWidget)
+                    await this.handleFlowStage(this.activeStep, flowWidget, false);
+            }
         }
         updateStatus(index, value) {
             this.state.setCompleted(index, value);

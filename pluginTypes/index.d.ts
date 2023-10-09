@@ -129,15 +129,18 @@ declare module "@scom/scom-flow" {
         private calculateSteps;
         setData(data: IFlowData): Promise<void>;
         getData(): IFlowData;
-        private renderUI;
+        private initializeUI;
         private renderOption;
         private renderSteps;
-        private resetData;
+        private updateTokenBalances;
+        private checkIfBalancesSufficient;
         private handleNextStep;
         private handleAddTransactions;
+        private handleFlowStage;
         private renderEmbedElm;
         private isStepSelectable;
         private onSelectedStep;
+        private changeStep;
         updateStatus(index: number, value: boolean): void;
         getConfigurators(): {
             name: string;
