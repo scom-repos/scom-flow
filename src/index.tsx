@@ -74,7 +74,8 @@ export default class ScomFlow extends Module {
         const networkMap = application.store["networkMap"];
         const vstack = new VStack();
         const token = rowData.toToken || rowData.fromToken; //FIXME: toToken or fromToken
-        const networkInfo: INetwork = networkMap[token.chainId];
+        const chainId = rowData.chainId || token.chainId;
+        const networkInfo: INetwork = networkMap[chainId];
         const caption = FormatUtils.truncateTxHash(columnData);
         const url = networkInfo.blockExplorerUrls[0] + '/tx/' + columnData;
         const label = new Label(undefined, {
