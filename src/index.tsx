@@ -99,33 +99,54 @@ export default class ScomFlow extends Module {
       key: 'desc'
     },
     {
-      title: 'Token Amounts',
+      title: 'Value',
       fieldName: '',
       key: '',
       onRenderCell: (source: Control, columnData: string, rowData: any) => {
         console.log('rowData', rowData)
         const vstack = new VStack();
-        const fromToken = rowData.fromToken;
-        if (fromToken) {
-          const fromTokenAmount = FormatUtils.formatNumber(Utils.fromDecimals(rowData.fromTokenAmount, fromToken.decimals).toFixed(), {
-            decimalFigures: 4
+        if (rowData.value) {
+          const hstack = new HStack(undefined, {
+            verticalAlignment: 'center',
+            gap: 6
           });
-          const fromTokenLabel = new Label(undefined, {
-            caption: `${fromTokenAmount} ${fromToken.symbol}`,
-            font: {size: '0.875rem'}
+          vstack.append(hstack);
+          const lblValue = new Label(undefined, {
+            caption: rowData.value,
+            font: { size: '0.875rem' }
           });
-          vstack.append(fromTokenLabel);
-        }
-        const toToken = rowData.toToken;
-        if (toToken) {
-          const toTokenAmount = FormatUtils.formatNumber(Utils.fromDecimals(rowData.toTokenAmount, toToken.decimals).toFixed(), {
-            decimalFigures: 4
+          hstack.append(lblValue);
+          const iconCopy = new Icon(undefined, {
+            width: 16,
+            height: 16,
+            name: 'copy'
           });
-          const toTokenLabel = new Label(undefined, {
-            caption: `${toTokenAmount} ${toToken.symbol}`,
-            font: {size: '0.875rem'}
-          });
-          vstack.append(toTokenLabel);
+          iconCopy.classList.add('pointer');
+          iconCopy.onClick = () => application.copyToClipboard(rowData.value || '');
+          hstack.append(iconCopy);
+        } else {
+          const fromToken = rowData.fromToken;
+          if (fromToken) {
+            const fromTokenAmount = FormatUtils.formatNumber(Utils.fromDecimals(rowData.fromTokenAmount, fromToken.decimals).toFixed(), {
+              decimalFigures: 4
+            });
+            const fromTokenLabel = new Label(undefined, {
+              caption: `${fromTokenAmount} ${fromToken.symbol}`,
+              font: {size: '0.875rem'}
+            });
+            vstack.append(fromTokenLabel);
+          }
+          const toToken = rowData.toToken;
+          if (toToken) {
+            const toTokenAmount = FormatUtils.formatNumber(Utils.fromDecimals(rowData.toTokenAmount, toToken.decimals).toFixed(), {
+              decimalFigures: 4
+            });
+            const toTokenLabel = new Label(undefined, {
+              caption: `${toTokenAmount} ${toToken.symbol}`,
+              font: {size: '0.875rem'}
+            });
+            vstack.append(toTokenLabel);
+          }
         }
         return vstack;
       }

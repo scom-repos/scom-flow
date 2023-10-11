@@ -222,33 +222,55 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                     key: 'desc'
                 },
                 {
-                    title: 'Token Amounts',
+                    title: 'Value',
                     fieldName: '',
                     key: '',
                     onRenderCell: (source, columnData, rowData) => {
                         console.log('rowData', rowData);
                         const vstack = new components_3.VStack();
-                        const fromToken = rowData.fromToken;
-                        if (fromToken) {
-                            const fromTokenAmount = components_3.FormatUtils.formatNumber(eth_wallet_1.Utils.fromDecimals(rowData.fromTokenAmount, fromToken.decimals).toFixed(), {
-                                decimalFigures: 4
+                        if (rowData.value) {
+                            const hstack = new components_3.HStack(undefined, {
+                                verticalAlignment: 'center',
+                                gap: 6
                             });
-                            const fromTokenLabel = new components_3.Label(undefined, {
-                                caption: `${fromTokenAmount} ${fromToken.symbol}`,
+                            vstack.append(hstack);
+                            const lblValue = new components_3.Label(undefined, {
+                                caption: rowData.value,
                                 font: { size: '0.875rem' }
                             });
-                            vstack.append(fromTokenLabel);
+                            hstack.append(lblValue);
+                            const iconCopy = new components_3.Icon(undefined, {
+                                width: 16,
+                                height: 16,
+                                name: 'copy'
+                            });
+                            iconCopy.classList.add('pointer');
+                            iconCopy.onClick = () => components_3.application.copyToClipboard(rowData.value || '');
+                            hstack.append(iconCopy);
                         }
-                        const toToken = rowData.toToken;
-                        if (toToken) {
-                            const toTokenAmount = components_3.FormatUtils.formatNumber(eth_wallet_1.Utils.fromDecimals(rowData.toTokenAmount, toToken.decimals).toFixed(), {
-                                decimalFigures: 4
-                            });
-                            const toTokenLabel = new components_3.Label(undefined, {
-                                caption: `${toTokenAmount} ${toToken.symbol}`,
-                                font: { size: '0.875rem' }
-                            });
-                            vstack.append(toTokenLabel);
+                        else {
+                            const fromToken = rowData.fromToken;
+                            if (fromToken) {
+                                const fromTokenAmount = components_3.FormatUtils.formatNumber(eth_wallet_1.Utils.fromDecimals(rowData.fromTokenAmount, fromToken.decimals).toFixed(), {
+                                    decimalFigures: 4
+                                });
+                                const fromTokenLabel = new components_3.Label(undefined, {
+                                    caption: `${fromTokenAmount} ${fromToken.symbol}`,
+                                    font: { size: '0.875rem' }
+                                });
+                                vstack.append(fromTokenLabel);
+                            }
+                            const toToken = rowData.toToken;
+                            if (toToken) {
+                                const toTokenAmount = components_3.FormatUtils.formatNumber(eth_wallet_1.Utils.fromDecimals(rowData.toTokenAmount, toToken.decimals).toFixed(), {
+                                    decimalFigures: 4
+                                });
+                                const toTokenLabel = new components_3.Label(undefined, {
+                                    caption: `${toTokenAmount} ${toToken.symbol}`,
+                                    font: { size: '0.875rem' }
+                                });
+                                vstack.append(toTokenLabel);
+                            }
                         }
                         return vstack;
                     }
