@@ -208,15 +208,7 @@ define("@scom/scom-flow/utils/theme.ts", ["require", "exports"], function (requi
 define("@scom/scom-flow/utils/index.ts", ["require", "exports", "@scom/scom-flow/utils/theme.ts"], function (require, exports, theme_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.lightTheme = exports.darkTheme = exports.generateUUID = void 0;
-    ///<amd-module name='@scom/scom-flow/utils/index.ts'/> 
-    const generateUUID = () => {
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-        });
-    };
-    exports.generateUUID = generateUUID;
+    exports.lightTheme = exports.darkTheme = void 0;
     Object.defineProperty(exports, "darkTheme", { enumerable: true, get: function () { return theme_1.darkTheme; } });
     Object.defineProperty(exports, "lightTheme", { enumerable: true, get: function () { return theme_1.lightTheme; } });
 });
@@ -583,9 +575,6 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             const stepInfo = this.steps[step];
             const widgetData = (stepInfo === null || stepInfo === void 0 ? void 0 : stepInfo.widgetData) || {};
             let flowWidget = await components_3.application.createElement(widgetData.name);
-            if (flowWidget) {
-                flowWidget.id = (0, utils_1.generateUUID)();
-            }
             return flowWidget;
         }
         isStepSelectable(index) {
