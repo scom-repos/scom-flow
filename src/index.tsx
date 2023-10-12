@@ -20,7 +20,7 @@ import { customStyles, expandablePanelStyle, spinnerStyle } from './index.css';
 import asset from './asset';
 import { IFlowData, IOption, IStep, IWidgetData } from './interface';
 import { State } from './store/index';
-import { generateUUID, darkTheme, lightTheme } from './utils';
+import { darkTheme, lightTheme } from './utils';
 import { BigNumber, INetwork, Utils } from '@ijstech/eth-wallet';
 import ScomAccordion  from '@scom/scom-accordion';
 import { tokenStore, ChainNativeTokenByChainId } from '@scom/scom-token-list';
@@ -442,9 +442,6 @@ export default class ScomFlow extends Module {
     const stepInfo = this.steps[step];
     const widgetData = stepInfo?.widgetData || {}
     let flowWidget = await application.createElement(widgetData.name);
-    if (flowWidget) {
-      flowWidget.id = generateUUID();
-    }
     return flowWidget;
   }
 

@@ -127,7 +127,6 @@ declare module "@scom/scom-flow/utils/theme.ts" {
 }
 /// <amd-module name="@scom/scom-flow/utils/index.ts" />
 declare module "@scom/scom-flow/utils/index.ts" {
-    export const generateUUID: () => string;
     export { darkTheme, lightTheme } from "@scom/scom-flow/utils/theme.ts";
 }
 /// <amd-module name="@scom/scom-flow" />
