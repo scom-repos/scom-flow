@@ -20,7 +20,7 @@ import { customStyles, expandablePanelStyle, spinnerStyle } from './index.css';
 import asset from './asset';
 import { IFlowData, IOption, IStep, IWidgetData } from './interface';
 import { State } from './store/index';
-import { generateUUID } from './utils';
+import { generateUUID, darkTheme, lightTheme } from './utils';
 import { BigNumber, INetwork, Utils } from '@ijstech/eth-wallet';
 import ScomAccordion  from '@scom/scom-accordion';
 import { tokenStore, ChainNativeTokenByChainId } from '@scom/scom-token-list';
@@ -208,6 +208,10 @@ export default class ScomFlow extends Module {
     }
     this._data.activeStep = step;
     this.state.activeStep = step;
+  }
+
+  get theme() {
+    return document.body.style.getPropertyValue('--theme');
   }
 
   private calculateSteps(widgets: IWidgetData[]) {
@@ -521,13 +525,31 @@ export default class ScomFlow extends Module {
         await this.setData({ description, img, option, widgets, activeStep });
       }
     }
-    const themeVar = document.body.style.getPropertyValue('--theme');
-    this.setThemeVar(themeVar);
+    this.updateTheme();
   }
 
-  private setThemeVar(theme: string) {
-    this.style.setProperty('--card-color-l', theme === 'light' ? '5%' : '95%');
-    this.style.setProperty('--card-color-a', theme === 'light' ? '0.05' : '0.1');
+  private setThemeVar() {
+    this.style.setProperty('--card-color-l', this.theme === 'light' ? '5%' : '95%');
+    this.style.setProperty('--card-color-a', this.theme === 'light' ? '0.05' : '0.1');
+  }
+
+  private updateStyle(name: string, value: any) {
+    value ?
+      this.style.setProperty(name, value) :
+      this.style.removeProperty(name);
+  }
+  
+  private updateTheme() {
+    this.setThemeVar();
+    const themeVars = this.theme === 'light' ? lightTheme : darkTheme;
+    this.updateStyle('--action-disabled', themeVars.action.disabled);
+    this.updateStyle('--action-hover', themeVars.action.hover);
+    this.updateStyle('--action-selected', themeVars.action.selected);
+    this.updateStyle('--background-main', themeVars.background.main);
+    this.updateStyle('--colors-primary-light', themeVars.colors.primary.light);
+    this.updateStyle('--colors-secondary-main', themeVars.colors.primary.main);
+    this.updateStyle('--colors-success-main', themeVars.colors.success.main);
+    this.updateStyle('--text-primary', themeVars.text.primary);
   }
 
   // private toggleExpandablePanel(c: Control) {
@@ -546,7 +568,7 @@ export default class ScomFlow extends Module {
 
   render() {
     return (
-      <i-panel class={customStyles}>
+      <i-panel class={customStyles} background={{ color: Theme.background.main }}>
         <i-grid-layout
           templateColumns={['3fr 4fr']}
           gap={{row: '1rem', column: '2rem'}}

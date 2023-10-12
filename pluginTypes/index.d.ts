@@ -78,9 +78,57 @@ declare module "@scom/scom-flow/store/state.ts" {
 declare module "@scom/scom-flow/store/index.ts" {
     export * from "@scom/scom-flow/store/state.ts";
 }
+/// <amd-module name="@scom/scom-flow/utils/theme.ts" />
+declare module "@scom/scom-flow/utils/theme.ts" {
+    export const darkTheme: {
+        action: {
+            disabled: string;
+            hover: string;
+            selected: string;
+        };
+        background: {
+            main: string;
+        };
+        colors: {
+            primary: {
+                light: string;
+                main: string;
+            };
+            success: {
+                main: string;
+            };
+        };
+        text: {
+            primary: string;
+        };
+    };
+    export const lightTheme: {
+        action: {
+            disabled: string;
+            hover: string;
+            selected: string;
+        };
+        background: {
+            main: string;
+        };
+        colors: {
+            primary: {
+                light: string;
+                main: string;
+            };
+            success: {
+                main: string;
+            };
+        };
+        text: {
+            primary: string;
+        };
+    };
+}
 /// <amd-module name="@scom/scom-flow/utils/index.ts" />
 declare module "@scom/scom-flow/utils/index.ts" {
     export const generateUUID: () => string;
+    export { darkTheme, lightTheme } from "@scom/scom-flow/utils/theme.ts";
 }
 /// <amd-module name="@scom/scom-flow" />
 declare module "@scom/scom-flow" {
@@ -126,6 +174,7 @@ declare module "@scom/scom-flow" {
         set option(value: IOption);
         get activeStep(): number;
         set activeStep(step: number);
+        get theme(): string;
         private calculateSteps;
         setData(data: IFlowData): Promise<void>;
         getData(): IFlowData;
@@ -150,6 +199,8 @@ declare module "@scom/scom-flow" {
         }[];
         init(): Promise<void>;
         private setThemeVar;
+        private updateStyle;
+        private updateTheme;
         render(): any;
     }
 }
