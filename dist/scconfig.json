@@ -5,6 +5,7 @@
     "dependencies": [
         "@ijstech/components",
         "@ijstech/eth-wallet",
-        "@scom/scom-accordion"
+        "@scom/scom-accordion",
+        "@scom/scom-token-list"
     ]
 }
