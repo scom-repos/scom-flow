@@ -445,6 +445,16 @@ export default class ScomFlow extends Module {
         setData: async (data: IFlowData) => {
           await this.setData(data);
         }
+      },
+      {
+        name: 'Builder Configurator',
+        target: 'Builders',
+        getData: async () => {
+          return this._data
+        },
+        setData: async (data: IFlowData) => {
+          await this.setData(data);
+        }
       }
     ]
   }

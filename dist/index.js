@@ -536,6 +536,16 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                     setData: async (data) => {
                         await this.setData(data);
                     }
+                },
+                {
+                    name: 'Builder Configurator',
+                    target: 'Builders',
+                    getData: async () => {
+                        return this._data;
+                    },
+                    setData: async (data) => {
+                        await this.setData(data);
+                    }
                 }
             ];
         }
