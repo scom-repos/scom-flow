@@ -155,10 +155,60 @@ define("@scom/scom-flow/store/index.ts", ["require", "exports", "@scom/scom-flow
     ///<amd-module name='@scom/scom-flow/store/index.ts'/> 
     __exportStar(state_1, exports);
 });
-define("@scom/scom-flow/utils/index.ts", ["require", "exports"], function (require, exports) {
+define("@scom/scom-flow/utils/theme.ts", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.generateUUID = void 0;
+    exports.lightTheme = exports.darkTheme = void 0;
+    ///<amd-module name='@scom/scom-flow/utils/theme.ts'/> 
+    exports.darkTheme = {
+        "action": {
+            "disabled": 'rgba(255,255,255,0.3)',
+            "hover": 'rgba(255,255,255,0.08)',
+            "selected": 'rgba(255,255,255, 0.16)',
+        },
+        "background": {
+            "main": '#1E1E1E',
+        },
+        "colors": {
+            "primary": {
+                "light": 'rgb(101, 115, 195)',
+                "main": '#3f51b5',
+            },
+            "success": {
+                "main": '#66bb6a',
+            },
+        },
+        "text": {
+            "primary": '#fff',
+        },
+    };
+    exports.lightTheme = {
+        "action": {
+            "disabled": 'rgba(0, 0, 0, 0.26)',
+            "hover": 'rgba(0, 0, 0, 0.04)',
+            "selected": 'rgba(0, 0, 0, 0.08)',
+        },
+        "background": {
+            "main": '#ffffff',
+        },
+        "colors": {
+            "primary": {
+                "light": 'rgb(101, 115, 195)',
+                "main": '#3f51b5',
+            },
+            "success": {
+                "main": '#4caf50',
+            },
+        },
+        "text": {
+            "primary": 'rgba(0, 0, 0, 0.87)',
+        },
+    };
+});
+define("@scom/scom-flow/utils/index.ts", ["require", "exports", "@scom/scom-flow/utils/theme.ts"], function (require, exports, theme_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.lightTheme = exports.darkTheme = exports.generateUUID = void 0;
     ///<amd-module name='@scom/scom-flow/utils/index.ts'/> 
     const generateUUID = () => {
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -167,6 +217,8 @@ define("@scom/scom-flow/utils/index.ts", ["require", "exports"], function (requi
         });
     };
     exports.generateUUID = generateUUID;
+    Object.defineProperty(exports, "darkTheme", { enumerable: true, get: function () { return theme_1.darkTheme; } });
+    Object.defineProperty(exports, "lightTheme", { enumerable: true, get: function () { return theme_1.lightTheme; } });
 });
 define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/scom-flow/index.css.ts", "@scom/scom-flow/asset.ts", "@scom/scom-flow/store/index.ts", "@scom/scom-flow/utils/index.ts", "@ijstech/eth-wallet"], function (require, exports, components_3, index_css_1, asset_1, index_1, utils_1, eth_wallet_1) {
     "use strict";
@@ -330,6 +382,9 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             }
             this._data.activeStep = step;
             this.state.activeStep = step;
+        }
+        get theme() {
+            return document.body.style.getPropertyValue('--theme');
         }
         calculateSteps(widgets) {
             let steps = [];
@@ -563,12 +618,28 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                     await this.setData({ description, img, option, widgets, activeStep });
                 }
             }
-            const themeVar = document.body.style.getPropertyValue('--theme');
-            this.setThemeVar(themeVar);
+            this.updateTheme();
         }
-        setThemeVar(theme) {
-            this.style.setProperty('--card-color-l', theme === 'light' ? '5%' : '95%');
-            this.style.setProperty('--card-color-a', theme === 'light' ? '0.05' : '0.1');
+        setThemeVar() {
+            this.style.setProperty('--card-color-l', this.theme === 'light' ? '5%' : '95%');
+            this.style.setProperty('--card-color-a', this.theme === 'light' ? '0.05' : '0.1');
+        }
+        updateStyle(name, value) {
+            value ?
+                this.style.setProperty(name, value) :
+                this.style.removeProperty(name);
+        }
+        updateTheme() {
+            this.setThemeVar();
+            const themeVars = this.theme === 'light' ? utils_1.lightTheme : utils_1.darkTheme;
+            this.updateStyle('--action-disabled', themeVars.action.disabled);
+            this.updateStyle('--action-hover', themeVars.action.hover);
+            this.updateStyle('--action-selected', themeVars.action.selected);
+            this.updateStyle('--background-main', themeVars.background.main);
+            this.updateStyle('--colors-primary-light', themeVars.colors.primary.light);
+            this.updateStyle('--colors-secondary-main', themeVars.colors.primary.main);
+            this.updateStyle('--colors-success-main', themeVars.colors.success.main);
+            this.updateStyle('--text-primary', themeVars.text.primary);
         }
         // private toggleExpandablePanel(c: Control) {
         //   const icon: Icon = c.querySelector('i-icon.expandable-icon');
@@ -584,7 +655,7 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
         //   }
         // }
         render() {
-            return (this.$render("i-panel", { class: index_css_1.customStyles },
+            return (this.$render("i-panel", { class: index_css_1.customStyles, background: { color: Theme.background.main } },
                 this.$render("i-grid-layout", { templateColumns: ['3fr 4fr'], gap: { row: '1rem', column: '2rem' }, mediaQueries: [
                         {
                             maxWidth: '767px',
