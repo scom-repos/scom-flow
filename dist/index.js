@@ -688,7 +688,7 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
         //   }
         // }
         render() {
-            return (this.$render("i-panel", { class: index_css_1.customStyles, background: { color: Theme.background.main } },
+            return (this.$render("i-panel", { class: index_css_1.customStyles },
                 this.$render("i-grid-layout", { templateColumns: ['3fr 4fr'], gap: { row: '1rem', column: '2rem' }, mediaQueries: [
                         {
                             maxWidth: '767px',
@@ -698,13 +698,13 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                         }
                     ] },
                     this.$render("i-panel", null,
-                        this.$render("i-vstack", { border: { style: 'none' }, class: "shadow" },
+                        this.$render("i-vstack", { border: { style: 'none', radius: 6 }, class: "shadow", overflow: "hidden", background: { color: Theme.background.main } },
                             this.$render("i-hstack", { verticalAlignment: "center", border: { bottom: { width: '1px', style: 'solid', color: 'hsla(0, 0%, var(--card-color-l), 0.03)' } }, padding: { left: '1rem', right: '1rem', top: '1rem', bottom: '1rem' }, background: { color: Theme.action.hover }, gap: '1rem' },
                                 this.$render("i-panel", { minWidth: 50 },
                                     this.$render("i-image", { id: "flowImg", url: asset_1.default.scom, width: 50, height: 50, display: "block" })),
                                 this.$render("i-label", { id: "lbDesc", caption: '', lineHeight: 1.5 })),
                             this.$render("i-vstack", { padding: { left: '0.5rem', right: '0.5rem', top: '0.5rem', bottom: '0.5rem' }, id: "pnlStep", gap: "0.5rem" }))),
-                    this.$render("i-vstack", { border: { style: 'none' }, maxWidth: '100%', overflow: 'hidden', class: "shadow" },
+                    this.$render("i-vstack", { border: { style: 'none', radius: 6 }, maxWidth: '100%', class: "shadow", overflow: "hidden", background: { color: Theme.background.main } },
                         this.$render("i-vstack", { id: "pnlLoading", stack: { grow: '1' }, horizontalAlignment: "center", verticalAlignment: "center", padding: { top: "1rem", bottom: "1rem", left: "1rem", right: "1rem" }, visible: false },
                             this.$render("i-panel", { class: index_css_1.spinnerStyle })),
                         this.$render("i-vstack", { id: "pnlEmbed", width: "100%" }),

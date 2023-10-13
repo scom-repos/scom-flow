@@ -565,7 +565,7 @@ export default class ScomFlow extends Module {
 
   render() {
     return (
-      <i-panel class={customStyles} background={{ color: Theme.background.main }}>
+      <i-panel class={customStyles}>
         <i-grid-layout
           templateColumns={['3fr 4fr']}
           gap={{row: '1rem', column: '2rem'}}
@@ -580,8 +580,10 @@ export default class ScomFlow extends Module {
         >
           <i-panel>
             <i-vstack
-              border={{style: 'none'}}
+              border={{ style: 'none', radius: 6 }}
               class="shadow"
+              overflow="hidden"
+              background={{ color: Theme.background.main }}
             >
               <i-hstack
                 verticalAlignment="center"
@@ -603,10 +605,12 @@ export default class ScomFlow extends Module {
             </i-vstack>
           </i-panel>
           <i-vstack
-            border={{style: 'none'}}
+            border={{ style: 'none', radius: 6 }}
             maxWidth={'100%'}
-            overflow={'hidden'}
             class="shadow"
+            overflow="hidden"
+            background={{ color: Theme.background.main }}
+            
           >
             <i-vstack
               id="pnlLoading"
