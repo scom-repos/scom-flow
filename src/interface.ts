@@ -2,9 +2,16 @@ export interface IStep {
   name: string;
   image?: string;
   color?: string;
-  widgetData: any;
+  widgetData: IStepWidget;
+  isConditional: boolean;
   stage?: string;
   completed?: boolean;
+}
+
+export interface IStepWidget {
+  name: string;
+  options: IWidgetDataOptions;
+  tokenRequirements?: ITokenRequirement[];
 }
 
 export interface ITokenIn {
@@ -24,11 +31,16 @@ export interface ITokenRequirement {
   tokenOut: ITokenOut;
 }
 
+export interface IWidgetDataOptions {
+  properties: any;
+}
+
 export interface IWidgetData {
   name: string;
   initialSetupStepTitle?: string;
   executionStepTitle: string;
-  options: any;
+  isConditional?: boolean;
+  options: IWidgetDataOptions;
   tokenRequirements?: ITokenRequirement[];
 }
 

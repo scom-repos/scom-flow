@@ -215,7 +215,7 @@ export default class ScomFlow extends Module {
   }
 
   private calculateSteps(widgets: IWidgetData[]) {
-    let steps = [];
+    let steps: IStep[] = [];
     for (let widget of widgets) {
       if (widget.initialSetupStepTitle) {
         steps.push({
@@ -223,6 +223,7 @@ export default class ScomFlow extends Module {
           image: '',
           color: Theme.colors.success.main,
           stage: 'initialSetup',
+          isConditional: widget.isConditional || false,
           widgetData: {
             name: widget.name,
             options: widget.options,
@@ -236,6 +237,7 @@ export default class ScomFlow extends Module {
           image: '',
           color: Theme.colors.success.main,
           stage: 'tokenAcquisition',
+          isConditional: widget.isConditional || false,
           widgetData: {
             name: 'scom-token-acquisition',
             options: widget.options,
@@ -249,6 +251,7 @@ export default class ScomFlow extends Module {
           image: '',
           color: Theme.colors.success.main,
           stage: 'execution',
+          isConditional: widget.isConditional || false,
           widgetData: {
             name: widget.name,
             options: widget.options,
@@ -297,18 +300,23 @@ export default class ScomFlow extends Module {
     await this.renderSteps();
     const flowWidget = await this.renderEmbedElm(this.activeStep);
     const stepInfo = this.steps[this.activeStep];
-    const widgetData = stepInfo?.widgetData || {};
-    await this.updateTokenBalances(widgetData.tokenRequirements);
+    const widgetData = stepInfo?.widgetData;
+    if (widgetData.tokenRequirements) {
+      await this.updateTokenBalances(widgetData.tokenRequirements);
+    }
     const flowWidgetObj = await this.handleFlowStage(this.activeStep, flowWidget, false);
   }
 
   private renderOption() {}
 
   private async renderSteps() {
+    let requiredStepIndex = 0;
     for (let i = 0; i < this.steps.length; i++) {
       const step = this.steps[i]
+      if (!step.isConditional) requiredStepIndex++;
       const item = (
         <i-hstack
+          visible={!step.isConditional}
           verticalAlignment="center" horizontalAlignment="space-between"
           gap={'1rem'}
           padding={{left: '1rem', right: '1.5rem', top: '1rem', bottom: '1rem'}}
@@ -317,9 +325,9 @@ export default class ScomFlow extends Module {
           onClick={() => this.onSelectedStep(i)}
         >
           <i-vstack gap={'1rem'}>
-            <i-panel>
-              <i-label
-                caption={`${i + 1}`}
+            <i-panel visible={!step.isConditional}>
+              <i-label 
+                caption={`${requiredStepIndex}`}
                 padding={{left: '1rem', right: '1rem', top: '0.25rem', bottom: '0.25rem'}}
                 border={{radius: 20}}
                 font={{color: '#fff'}}
@@ -376,33 +384,65 @@ export default class ScomFlow extends Module {
     return true;
   }
 
+  private async handleJumpToStep(data: any) {
+    this.steps.forEach((step, index) => {
+      this.updateStatus(index, true);
+    });
+    let stage = data.stage || 'execution';
+    let nextStep = this.state.steps.findIndex((step, index) => step.widgetData.name === data.widgetName && step.stage === stage && index > this.activeStep);
+    if (this.steps[nextStep].isConditional) {
+      this.stepElms[nextStep].visible = true;
+    }
+    const widgetData = this.steps[nextStep].widgetData;
+    this.steps[nextStep].widgetData = {
+      ...widgetData
+    }
+    if (data.executionProperties) {
+      this.steps[nextStep].widgetData.options = {
+        properties: {
+          ...widgetData.options.properties,
+          ...data.executionProperties
+        }
+      }
+    }
+    if (data.tokenRequirements) {
+      this.steps[nextStep].widgetData.tokenRequirements = data.tokenRequirements;
+    }
+    if (nextStep) {
+      await this.changeStep(nextStep, false);
+    }
+  }
+
   private async handleNextStep(data: any) {
     let nextStep: number;
-    let options: any;
     this.steps.forEach((step, index) => {
       this.updateStatus(index, true);
     });
     const balancesSufficient = this.checkIfBalancesSufficient(data.tokenRequirements);
     if (!balancesSufficient) {
       nextStep = this.state.steps.findIndex((step, index) => step.stage === 'tokenAcquisition' && index > this.activeStep);
-      options = {
-        properties: data.executionProperties,
-        onDone: async (target: Control) => {
-            console.log('Completed all steps', target)
-            await this.changeStep(this.activeStep + 1, true);
-        }
-      }
     }
     else {
-      nextStep = this.state.steps.findIndex((step, index)  => step.stage === 'execution' && index > this.activeStep);
-      options = {
-        properties: data.executionProperties
+      nextStep = this.state.steps.findIndex((step, index) => step.stage === 'execution' && index > this.activeStep);
+    }
+    const widgetData = this.steps[nextStep].widgetData;
+    this.steps[nextStep].widgetData = {
+      ...widgetData
+    }
+    if (data.executionProperties) {
+      this.steps[nextStep].widgetData.options = {
+        properties: {
+          ...widgetData.options.properties,
+          ...data.executionProperties
+        },
+        // onDone: async (target: Control) => {
+        //     console.log('Completed all steps', target)
+        //     await this.changeStep(this.activeStep + 1, true);
+        // }
       }
     }
-    this.steps[nextStep].widgetData = {
-      ...this.steps[nextStep].widgetData,
-      options: options,
-      tokenRequirements: data.tokenRequirements
+    if (data.tokenRequirements) {
+      this.steps[nextStep].widgetData.tokenRequirements = data.tokenRequirements;
     }
     console.log('nextStep', data);
     if (nextStep) {
@@ -419,13 +459,13 @@ export default class ScomFlow extends Module {
   private async handleFlowStage(step: number, flowWidget: any, isWidgetConnected: boolean) {
     const widgetContainer = this.widgetContainerMap.get(step);
     const stepInfo = this.steps[step];
-    const widgetData = stepInfo?.widgetData || {}
+    const widgetData = stepInfo?.widgetData;
     const flowWidgetObj = await flowWidget.handleFlowStage(widgetContainer, stepInfo.stage, {
       ...widgetData.options,
       isWidgetConnected: isWidgetConnected,
       tokenRequirements: widgetData.tokenRequirements,
-      initialSetupData: widgetData.initialSetupData,
       onNextStep: this.handleNextStep.bind(this),
+      onJumpToStep: this.handleJumpToStep.bind(this),
       onAddTransactions: this.handleAddTransactions.bind(this)
     });
     if (flowWidgetObj) {
@@ -440,7 +480,7 @@ export default class ScomFlow extends Module {
     widgetContainer.clearInnerHTML();
     widgetContainer.visible = true;
     const stepInfo = this.steps[step];
-    const widgetData = stepInfo?.widgetData || {}
+    const widgetData = stepInfo?.widgetData
     let flowWidget = await application.createElement(widgetData.name);
     return flowWidget;
   }
@@ -460,8 +500,10 @@ export default class ScomFlow extends Module {
     const stepInfo = this.steps[index];
     this.pnlTransactions.visible = stepInfo.stage !== 'initialSetup';
     let flowWidget: any = this.widgetModuleMap.get(this.activeStep);
-    const widgetData = stepInfo?.widgetData || {};
-    await this.updateTokenBalances(widgetData.tokenRequirements);
+    const widgetData = stepInfo?.widgetData;
+    if (widgetData.tokenRequirements) {
+      await this.updateTokenBalances(widgetData.tokenRequirements);
+    }
     if (flowWidget) {
       await this.handleFlowStage(this.activeStep, flowWidget, true);
     }
