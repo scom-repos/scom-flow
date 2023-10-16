@@ -389,7 +389,7 @@ export default class ScomFlow extends Module {
       this.updateStatus(index, true);
     });
     let stage = data.stage || 'execution';
-    let nextStep = this.state.steps.findIndex((step, index) => step.widgetData.name === data.widgetName && step.stage === stage && index > this.activeStep);
+    let nextStep = this.state.steps.findIndex((step, index) => step.widgetData.name === data.widgetName && step.stage === stage);
     if (this.steps[nextStep].isConditional) {
       this.stepElms[nextStep].visible = true;
     }
