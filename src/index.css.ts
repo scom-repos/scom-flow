@@ -4,6 +4,9 @@ const Theme = Styles.Theme.ThemeVars;
 
 export const customStyles = Styles.style({
   $nest: {
+    '.step-container': {
+      counterReset: 'step',
+    },
     '.flow-step': {
       userSelect: 'none',
       cursor: 'pointer',
@@ -13,7 +16,19 @@ export const customStyles = Styles.style({
       cursor: 'not-allowed',
       background: Theme.action.disabled,
     },
-    '.flow-step.--active .step-icon': {
+    '.flow-step .step-stack::before': {
+      counterIncrement: 'step',
+      content: 'counters(step, ".")',
+      display: 'inline-block',
+      background: Theme.colors.success.main,
+      color: '#fff',
+      padding: '0.25rem 1rem',
+      borderRadius: 20,
+      fontFamily: Theme.typography.fontFamily,
+      fontSize: Theme.typography.fontSize,
+      alignSelf: 'start',
+    },
+    '.flow-step.--active .step-stack::before': {
       background: Theme.colors.primary.main,
       transition: 'all .3s ease-in'
     },
