@@ -25,6 +25,9 @@ define("@scom/scom-flow/index.css.ts", ["require", "exports", "@ijstech/componen
     const Theme = components_1.Styles.Theme.ThemeVars;
     exports.customStyles = components_1.Styles.style({
         $nest: {
+            '.step-container': {
+                counterReset: 'step',
+            },
             '.flow-step': {
                 userSelect: 'none',
                 cursor: 'pointer',
@@ -34,7 +37,19 @@ define("@scom/scom-flow/index.css.ts", ["require", "exports", "@ijstech/componen
                 cursor: 'not-allowed',
                 background: Theme.action.disabled,
             },
-            '.flow-step.--active .step-icon': {
+            '.flow-step .step-stack::before': {
+                counterIncrement: 'step',
+                content: 'counters(step, ".")',
+                display: 'inline-block',
+                background: Theme.colors.success.main,
+                color: '#fff',
+                padding: '0.25rem 1rem',
+                borderRadius: 20,
+                fontFamily: Theme.typography.fontFamily,
+                fontSize: Theme.typography.fontSize,
+                alignSelf: 'start',
+            },
+            '.flow-step.--active .step-stack::before': {
                 background: Theme.colors.primary.main,
                 transition: 'all .3s ease-in'
             },
@@ -474,19 +489,14 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
         }
         renderOption() { }
         async renderSteps() {
-            var _a, _b;
-            let requiredStepIndex = 0;
+            var _a;
             for (let i = 0; i < this.steps.length; i++) {
                 const step = this.steps[i];
-                if (!step.isConditional)
-                    requiredStepIndex++;
                 const item = (this.$render("i-hstack", { visible: !step.isConditional, verticalAlignment: "center", horizontalAlignment: "space-between", gap: '1rem', padding: { left: '1rem', right: '1.5rem', top: '1rem', bottom: '1rem' }, class: 'flow-step' + (i === this.activeStep ? ' --active' : ''), 
                     // background={{color: Theme.action.hover}}
                     onClick: () => this.onSelectedStep(i) },
-                    this.$render("i-vstack", { gap: '1rem' },
-                        this.$render("i-panel", { visible: !step.isConditional },
-                            this.$render("i-label", { caption: `${requiredStepIndex}`, padding: { left: '1rem', right: '1rem', top: '0.25rem', bottom: '0.25rem' }, border: { radius: 20 }, font: { color: '#fff' }, background: { color: (_a = step.color) !== null && _a !== void 0 ? _a : Theme.colors.primary.light }, class: "step-icon" })),
-                        this.$render("i-label", { caption: (_b = step.name) !== null && _b !== void 0 ? _b : '', class: "step-label" })),
+                    this.$render("i-vstack", { class: "step-stack", gap: '1rem' },
+                        this.$render("i-label", { caption: (_a = step.name) !== null && _a !== void 0 ? _a : '', class: "step-label" })),
                     this.$render("i-panel", null,
                         this.$render("i-image", { url: step.image, width: 50, display: "flex" }))));
                 if (!this.isStepSelectable(i)) {
@@ -738,7 +748,7 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                                 this.$render("i-panel", { minWidth: 50 },
                                     this.$render("i-image", { id: "flowImg", url: asset_1.default.scom, width: 50, height: 50, display: "block" })),
                                 this.$render("i-label", { id: "lbDesc", caption: '', lineHeight: 1.5 })),
-                            this.$render("i-vstack", { padding: { left: '0.5rem', right: '0.5rem', top: '0.5rem', bottom: '0.5rem' }, id: "pnlStep", gap: "0.5rem" }))),
+                            this.$render("i-vstack", { padding: { left: '0.5rem', right: '0.5rem', top: '0.5rem', bottom: '0.5rem' }, id: "pnlStep", class: "step-container", gap: "0.5rem" }))),
                     this.$render("i-vstack", { border: { style: 'none', radius: 6 }, maxWidth: '100%', class: "shadow", overflow: "hidden", background: { color: Theme.background.main } },
                         this.$render("i-vstack", { id: "pnlLoading", stack: { grow: '1' }, horizontalAlignment: "center", verticalAlignment: "center", padding: { top: "1rem", bottom: "1rem", left: "1rem", right: "1rem" }, visible: false },
                             this.$render("i-panel", { class: index_css_1.spinnerStyle })),

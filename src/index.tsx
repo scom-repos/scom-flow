@@ -310,10 +310,8 @@ export default class ScomFlow extends Module {
   private renderOption() {}
 
   private async renderSteps() {
-    let requiredStepIndex = 0;
     for (let i = 0; i < this.steps.length; i++) {
       const step = this.steps[i]
-      if (!step.isConditional) requiredStepIndex++;
       const item = (
         <i-hstack
           visible={!step.isConditional}
@@ -324,17 +322,7 @@ export default class ScomFlow extends Module {
           // background={{color: Theme.action.hover}}
           onClick={() => this.onSelectedStep(i)}
         >
-          <i-vstack gap={'1rem'}>
-            <i-panel visible={!step.isConditional}>
-              <i-label 
-                caption={`${requiredStepIndex}`}
-                padding={{left: '1rem', right: '1rem', top: '0.25rem', bottom: '0.25rem'}}
-                border={{radius: 20}}
-                font={{color: '#fff'}}
-                background={{color: step.color ?? Theme.colors.primary.light}}
-                class="step-icon"
-              ></i-label>
-            </i-panel>
+          <i-vstack class="step-stack" gap={'1rem'}>
             <i-label caption={step.name ?? ''} class="step-label"></i-label>
           </i-vstack>
           <i-panel>
@@ -642,6 +630,7 @@ export default class ScomFlow extends Module {
               <i-vstack
                 padding={{left: '0.5rem', right: '0.5rem', top: '0.5rem', bottom: '0.5rem'}}
                 id="pnlStep"
+                class="step-container"
                 gap="0.5rem"
               />
             </i-vstack>
