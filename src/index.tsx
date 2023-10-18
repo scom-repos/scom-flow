@@ -314,7 +314,7 @@ export default class ScomFlow extends Module {
       const step = this.steps[i]
       const item = (
         <i-hstack
-          visible={!step.isConditional}
+          visible={i == 0}
           verticalAlignment="center" horizontalAlignment="space-between"
           gap={'1rem'}
           padding={{left: '1rem', right: '1.5rem', top: '1rem', bottom: '1rem'}}
@@ -378,9 +378,7 @@ export default class ScomFlow extends Module {
     });
     let stage = data.stage || 'execution';
     let nextStep = this.state.steps.findIndex((step, index) => step.widgetData.name === data.widgetName && step.stage === stage);
-    if (this.steps[nextStep].isConditional) {
-      this.stepElms[nextStep].visible = true;
-    }
+    this.stepElms[nextStep].visible = true;
     const widgetData = this.steps[nextStep].widgetData;
     this.steps[nextStep].widgetData = {
       ...widgetData
@@ -413,6 +411,7 @@ export default class ScomFlow extends Module {
     else {
       nextStep = this.state.steps.findIndex((step, index) => step.stage === 'execution' && index > this.activeStep);
     }
+    this.stepElms[nextStep].visible = true;
     const widgetData = this.steps[nextStep].widgetData;
     this.steps[nextStep].widgetData = {
       ...widgetData
