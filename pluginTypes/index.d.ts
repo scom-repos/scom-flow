@@ -165,6 +165,7 @@ declare module "@scom/scom-flow" {
         private flowImg;
         private lbDesc;
         private stepElms;
+        private stepStatusLbls;
         private widgetContainerMap;
         private widgetModuleMap;
         private steps;
@@ -195,6 +196,7 @@ declare module "@scom/scom-flow" {
         private handleJumpToStep;
         private handleNextStep;
         private handleAddTransactions;
+        private handleUpdateStepStatus;
         private handleFlowStage;
         private renderEmbedElm;
         private isStepSelectable;

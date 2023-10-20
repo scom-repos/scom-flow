@@ -230,6 +230,7 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
         constructor() {
             super(...arguments);
             this.stepElms = [];
+            this.stepStatusLbls = [];
             this.widgetContainerMap = new Map();
             this.widgetModuleMap = new Map();
             this.steps = [];
@@ -464,6 +465,7 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             this.widgetContainerMap = new Map();
             this.widgetModuleMap = new Map();
             this.stepElms = [];
+            this.stepStatusLbls = [];
             if (this.tableTransactions)
                 this.tableTransactions.data = [];
             this.pnlTransactions.visible = false;
@@ -482,12 +484,14 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
         async renderSteps() {
             for (let i = 0; i < this.steps.length; i++) {
                 const step = this.steps[i];
+                const statusLabel = (this.$render("i-label", { font: { weight: 600 } }));
                 const item = (this.$render("i-hstack", { visible: i == 0, verticalAlignment: "center", horizontalAlignment: "space-between", gap: '1rem', padding: { left: '1rem', right: '1.5rem', top: '1rem', bottom: '1rem' }, class: 'flow-step' + (i === this.activeStep ? ' --active' : ''), 
                     // background={{color: Theme.action.hover}}
                     onClick: () => this.onSelectedStep(i) },
                     this.$render("i-vstack", { class: "step-stack", gap: '1rem' },
                         this.$render("i-label", { caption: step.name ?? '', class: "step-label" })),
-                    this.$render("i-panel", null,
+                    this.$render("i-panel", { class: "text-right" },
+                        statusLabel,
                         this.$render("i-image", { url: step.image, width: 50, display: "flex" }))));
                 if (!this.isStepSelectable(i)) {
                     item.classList.add('--disabled');
@@ -495,6 +499,7 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                 item.setAttribute('data-step', `${i}`);
                 this.pnlStep.appendChild(item);
                 this.stepElms.push(item);
+                this.stepStatusLbls.push(statusLabel);
                 const contentPanel = (this.$render("i-panel", { class: "pane-item", visible: false }));
                 contentPanel.setAttribute('data-step', `${i}`);
                 this.pnlEmbed.appendChild(contentPanel);
@@ -598,6 +603,13 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             const transactions = [...this.tableTransactions.data, ...data.list];
             this.tableTransactions.data = transactions;
         }
+        handleUpdateStepStatus(data) {
+            const label = this.stepStatusLbls[this.activeStep];
+            if (data.caption != null)
+                label.caption = data.caption || "";
+            if (data.color != null)
+                label.font = { weight: 600, color: data.color };
+        }
         async handleFlowStage(step, flowWidget, isWidgetConnected) {
             const widgetContainer = this.widgetContainerMap.get(step);
             const stepInfo = this.steps[step];
@@ -608,7 +620,8 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                 tokenRequirements: widgetData.tokenRequirements,
                 onNextStep: this.handleNextStep.bind(this),
                 onJumpToStep: this.handleJumpToStep.bind(this),
-                onAddTransactions: this.handleAddTransactions.bind(this)
+                onAddTransactions: this.handleAddTransactions.bind(this),
+                onUpdateStepStatus: this.handleUpdateStepStatus.bind(this)
             });
             if (flowWidgetObj) {
                 this.widgetModuleMap.set(step, flowWidgetObj.widget);
