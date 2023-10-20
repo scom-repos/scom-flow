@@ -52,6 +52,7 @@ export default class ScomFlow extends Module {
   private flowImg: Image;
   private lbDesc: Label;
   private stepElms: HStack[] = [];
+  private stepStatusLbls: Label[] = [];
   private widgetContainerMap: Map<number, Module> = new Map();
   private widgetModuleMap: Map<number, Module> = new Map();
   private steps: IStep[] = [];
@@ -293,6 +294,7 @@ export default class ScomFlow extends Module {
     this.widgetContainerMap = new Map();
     this.widgetModuleMap = new Map();
     this.stepElms = [];
+    this.stepStatusLbls = [];
     if (this.tableTransactions) this.tableTransactions.data = [];
     this.pnlTransactions.visible = false;
     this.pnlStep.clearInnerHTML();
@@ -311,7 +313,8 @@ export default class ScomFlow extends Module {
 
   private async renderSteps() {
     for (let i = 0; i < this.steps.length; i++) {
-      const step = this.steps[i]
+      const step = this.steps[i];
+      const statusLabel = (<i-label font={{ weight: 600 }}></i-label>);
       const item = (
         <i-hstack
           visible={i == 0}
@@ -325,7 +328,8 @@ export default class ScomFlow extends Module {
           <i-vstack class="step-stack" gap={'1rem'}>
             <i-label caption={step.name ?? ''} class="step-label"></i-label>
           </i-vstack>
-          <i-panel>
+          <i-panel class="text-right">
+            {statusLabel}
             <i-image url={step.image} width={50} display="flex"></i-image>
           </i-panel>
         </i-hstack>
@@ -336,6 +340,7 @@ export default class ScomFlow extends Module {
       item.setAttribute('data-step', `${i}`)
       this.pnlStep.appendChild(item);
       this.stepElms.push(item);
+      this.stepStatusLbls.push(statusLabel);
       const contentPanel = (<i-panel class="pane-item" visible={false}></i-panel>);
       contentPanel.setAttribute('data-step', `${i}`);
       this.pnlEmbed.appendChild(contentPanel);
@@ -443,6 +448,14 @@ export default class ScomFlow extends Module {
     this.tableTransactions.data = transactions;
   }
 
+  private handleUpdateStepStatus(data: any) {
+    const label = this.stepStatusLbls[this.activeStep];
+    if (data.caption != null)
+      label.caption = data.caption || "";
+    if (data.color != null)
+      label.font = { weight: 600, color: data.color };
+  }
+
   private async handleFlowStage(step: number, flowWidget: any, isWidgetConnected: boolean) {
     const widgetContainer = this.widgetContainerMap.get(step);
     const stepInfo = this.steps[step];
@@ -453,7 +466,8 @@ export default class ScomFlow extends Module {
       tokenRequirements: widgetData.tokenRequirements,
       onNextStep: this.handleNextStep.bind(this),
       onJumpToStep: this.handleJumpToStep.bind(this),
-      onAddTransactions: this.handleAddTransactions.bind(this)
+      onAddTransactions: this.handleAddTransactions.bind(this),
+      onUpdateStepStatus: this.handleUpdateStepStatus.bind(this)
     });
     if (flowWidgetObj) {
       this.widgetModuleMap.set(step, flowWidgetObj.widget);
