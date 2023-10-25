@@ -34,6 +34,8 @@ interface ScomFlowElement extends ControlElement {
   option?: IOption;
   widgets?: IWidgetData[];
   onChanged?: (target: Control, activeStep: number) => void;
+  onAddTransactions?: (data: any[]) => void;
+  onUpdateStepStatus?: (status: string) => void;
 }
 
 declare global {
@@ -161,6 +163,8 @@ export default class ScomFlow extends Module {
   private state: State;
 
   public onChanged: (target: Control, activeStep: number) => void;
+  public onAddTransactions: (data: any[]) => void;
+  public onUpdateStepStatus: (step: number, status: string) => void;
 
   static async create(options?: ScomFlowElement, parent?: Container) {
     let self = new this(parent, options);
@@ -446,14 +450,17 @@ export default class ScomFlow extends Module {
     if (!data.list) return;
     const transactions = [...this.tableTransactions.data, ...data.list];
     this.tableTransactions.data = transactions;
+    if (this.onAddTransactions) this.onAddTransactions(data.list);
   }
 
   private handleUpdateStepStatus(data: any) {
-    const label = this.stepStatusLbls[this.activeStep];
+    const step = this.activeStep;
+    const label = this.stepStatusLbls[step];
     if (data.caption != null)
       label.caption = data.caption || "";
     if (data.color != null)
       label.font = { weight: 600, color: data.color };
+    if (this.onUpdateStepStatus) this.onUpdateStepStatus(step, data.caption || "");
   }
 
   private async handleFlowStage(step: number, flowWidget: any, isWidgetConnected: boolean) {
@@ -554,6 +561,8 @@ export default class ScomFlow extends Module {
   async init() {
     super.init();
     this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
+    this.onAddTransactions = this.getAttribute('onAddTransactions', true) || this.onAddTransactions;
+    this.onUpdateStepStatus = this.getAttribute('onUpdateStepStatus', true) || this.onUpdateStepStatus;
     const lazyLoad = this.getAttribute('lazyLoad', true, false);
     if (!lazyLoad) {
       const description = this.getAttribute('description', true, '');

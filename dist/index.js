@@ -602,13 +602,18 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                 return;
             const transactions = [...this.tableTransactions.data, ...data.list];
             this.tableTransactions.data = transactions;
+            if (this.onAddTransactions)
+                this.onAddTransactions(data.list);
         }
         handleUpdateStepStatus(data) {
-            const label = this.stepStatusLbls[this.activeStep];
+            const step = this.activeStep;
+            const label = this.stepStatusLbls[step];
             if (data.caption != null)
                 label.caption = data.caption || "";
             if (data.color != null)
                 label.font = { weight: 600, color: data.color };
+            if (this.onUpdateStepStatus)
+                this.onUpdateStepStatus(step, data.caption || "");
         }
         async handleFlowStage(step, flowWidget, isWidgetConnected) {
             const widgetContainer = this.widgetContainerMap.get(step);
@@ -704,6 +709,8 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
         async init() {
             super.init();
             this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
+            this.onAddTransactions = this.getAttribute('onAddTransactions', true) || this.onAddTransactions;
+            this.onUpdateStepStatus = this.getAttribute('onUpdateStepStatus', true) || this.onUpdateStepStatus;
             const lazyLoad = this.getAttribute('lazyLoad', true, false);
             if (!lazyLoad) {
                 const description = this.getAttribute('description', true, '');
