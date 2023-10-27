@@ -151,7 +151,7 @@ declare module "@scom/scom-flow" {
         widgets?: IWidgetData[];
         onChanged?: (target: Control, activeStep: number) => void;
         onAddTransactions?: (data: any[]) => void;
-        onUpdateStepStatus?: (status: string) => void;
+        onUpdateStepStatus?: (step: number, status: string, message?: string) => void;
     }
     global {
         namespace JSX {
@@ -167,6 +167,7 @@ declare module "@scom/scom-flow" {
         private flowImg;
         private lbDesc;
         private stepElms;
+        private stepMsgLbls;
         private stepStatusLbls;
         private widgetContainerMap;
         private widgetModuleMap;
@@ -178,7 +179,7 @@ declare module "@scom/scom-flow" {
         private state;
         onChanged: (target: Control, activeStep: number) => void;
         onAddTransactions: (data: any[]) => void;
-        onUpdateStepStatus: (step: number, status: string) => void;
+        onUpdateStepStatus: (step: number, status: string, message?: string) => void;
         static create(options?: ScomFlowElement, parent?: Container): Promise<ScomFlow>;
         get description(): string;
         set description(value: string);

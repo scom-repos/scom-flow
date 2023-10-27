@@ -230,6 +230,7 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
         constructor() {
             super(...arguments);
             this.stepElms = [];
+            this.stepMsgLbls = [];
             this.stepStatusLbls = [];
             this.widgetContainerMap = new Map();
             this.widgetModuleMap = new Map();
@@ -466,6 +467,7 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             this.widgetModuleMap = new Map();
             this.stepElms = [];
             this.stepStatusLbls = [];
+            this.stepMsgLbls = [];
             if (this.tableTransactions)
                 this.tableTransactions.data = [];
             this.pnlTransactions.visible = false;
@@ -484,14 +486,16 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
         async renderSteps() {
             for (let i = 0; i < this.steps.length; i++) {
                 const step = this.steps[i];
-                const statusLabel = (this.$render("i-label", { font: { weight: 600 } }));
+                const lblStepMsg = (this.$render("i-label", { font: { color: Theme.colors.warning.main }, visible: false }));
+                const lblStatus = (this.$render("i-label", { font: { weight: 600 } }));
                 const item = (this.$render("i-hstack", { visible: i == 0, verticalAlignment: "center", horizontalAlignment: "space-between", gap: '1rem', padding: { left: '1rem', right: '1.5rem', top: '1rem', bottom: '1rem' }, class: 'flow-step' + (i === this.activeStep ? ' --active' : ''), 
                     // background={{color: Theme.action.hover}}
                     onClick: () => this.onSelectedStep(i) },
                     this.$render("i-vstack", { class: "step-stack", gap: '1rem' },
-                        this.$render("i-label", { caption: step.name ?? '', class: "step-label" })),
+                        this.$render("i-label", { caption: step.name ?? '', class: "step-label" }),
+                        lblStepMsg),
                     this.$render("i-panel", { class: "text-right" },
-                        statusLabel,
+                        lblStatus,
                         this.$render("i-image", { url: step.image, width: 50, display: "flex" }))));
                 if (!this.isStepSelectable(i)) {
                     item.classList.add('--disabled');
@@ -499,7 +503,8 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                 item.setAttribute('data-step', `${i}`);
                 this.pnlStep.appendChild(item);
                 this.stepElms.push(item);
-                this.stepStatusLbls.push(statusLabel);
+                this.stepMsgLbls.push(lblStepMsg);
+                this.stepStatusLbls.push(lblStatus);
                 const contentPanel = (this.$render("i-panel", { class: "pane-item", visible: false }));
                 contentPanel.setAttribute('data-step', `${i}`);
                 this.pnlEmbed.appendChild(contentPanel);
@@ -540,6 +545,9 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             });
             let stage = data.stage || 'execution';
             let nextStep = this.state.steps.findIndex((step, index) => step.widgetData.name === data.widgetName && step.stage === stage);
+            if (nextStep < this.activeStep) {
+                this.stepElms[this.activeStep].after(this.stepElms[nextStep]);
+            }
             this.stepElms[nextStep].visible = true;
             const widgetData = this.steps[nextStep].widgetData;
             this.steps[nextStep].widgetData = {
@@ -607,13 +615,17 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
         }
         handleUpdateStepStatus(data) {
             const step = this.activeStep;
-            const label = this.stepStatusLbls[step];
-            if (data.caption != null)
-                label.caption = data.caption || "";
+            const lblStatus = this.stepStatusLbls[step];
+            const lblMsg = this.stepMsgLbls[step];
+            if (data.status != null)
+                lblStatus.caption = data.status || "";
             if (data.color != null)
-                label.font = { weight: 600, color: data.color };
+                lblStatus.font = { weight: 600, color: data.color };
+            if (data.message != null)
+                lblMsg.caption = data.message;
+            lblMsg.visible = !!data.message;
             if (this.onUpdateStepStatus)
-                this.onUpdateStepStatus(step, data.caption || "");
+                this.onUpdateStepStatus(step, data.status || "", data.message);
         }
         async handleFlowStage(step, flowWidget, isWidgetConnected) {
             const widgetContainer = this.widgetContainerMap.get(step);

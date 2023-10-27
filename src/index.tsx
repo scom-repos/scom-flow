@@ -35,7 +35,7 @@ interface ScomFlowElement extends ControlElement {
   widgets?: IWidgetData[];
   onChanged?: (target: Control, activeStep: number) => void;
   onAddTransactions?: (data: any[]) => void;
-  onUpdateStepStatus?: (status: string) => void;
+  onUpdateStepStatus?: (step: number, status: string, message?: string) => void;
 }
 
 declare global {
@@ -54,6 +54,7 @@ export default class ScomFlow extends Module {
   private flowImg: Image;
   private lbDesc: Label;
   private stepElms: HStack[] = [];
+  private stepMsgLbls: Label[] = [];
   private stepStatusLbls: Label[] = [];
   private widgetContainerMap: Map<number, Module> = new Map();
   private widgetModuleMap: Map<number, Module> = new Map();
@@ -164,7 +165,7 @@ export default class ScomFlow extends Module {
 
   public onChanged: (target: Control, activeStep: number) => void;
   public onAddTransactions: (data: any[]) => void;
-  public onUpdateStepStatus: (step: number, status: string) => void;
+  public onUpdateStepStatus: (step: number, status: string, message?: string) => void;
 
   static async create(options?: ScomFlowElement, parent?: Container) {
     let self = new this(parent, options);
@@ -299,6 +300,7 @@ export default class ScomFlow extends Module {
     this.widgetModuleMap = new Map();
     this.stepElms = [];
     this.stepStatusLbls = [];
+    this.stepMsgLbls = [];
     if (this.tableTransactions) this.tableTransactions.data = [];
     this.pnlTransactions.visible = false;
     this.pnlStep.clearInnerHTML();
@@ -318,7 +320,8 @@ export default class ScomFlow extends Module {
   private async renderSteps() {
     for (let i = 0; i < this.steps.length; i++) {
       const step = this.steps[i];
-      const statusLabel = (<i-label font={{ weight: 600 }}></i-label>);
+      const lblStepMsg = (<i-label font={{ color: Theme.colors.warning.main }} visible={false}></i-label>)
+      const lblStatus = (<i-label font={{ weight: 600 }}></i-label>);
       const item = (
         <i-hstack
           visible={i == 0}
@@ -331,9 +334,10 @@ export default class ScomFlow extends Module {
         >
           <i-vstack class="step-stack" gap={'1rem'}>
             <i-label caption={step.name ?? ''} class="step-label"></i-label>
+            {lblStepMsg}
           </i-vstack>
           <i-panel class="text-right">
-            {statusLabel}
+            {lblStatus}
             <i-image url={step.image} width={50} display="flex"></i-image>
           </i-panel>
         </i-hstack>
@@ -344,7 +348,8 @@ export default class ScomFlow extends Module {
       item.setAttribute('data-step', `${i}`)
       this.pnlStep.appendChild(item);
       this.stepElms.push(item);
-      this.stepStatusLbls.push(statusLabel);
+      this.stepMsgLbls.push(lblStepMsg);
+      this.stepStatusLbls.push(lblStatus);
       const contentPanel = (<i-panel class="pane-item" visible={false}></i-panel>);
       contentPanel.setAttribute('data-step', `${i}`);
       this.pnlEmbed.appendChild(contentPanel);
@@ -387,6 +392,9 @@ export default class ScomFlow extends Module {
     });
     let stage = data.stage || 'execution';
     let nextStep = this.state.steps.findIndex((step, index) => step.widgetData.name === data.widgetName && step.stage === stage);
+    if (nextStep < this.activeStep) {
+      this.stepElms[this.activeStep].after(this.stepElms[nextStep]);
+    }
     this.stepElms[nextStep].visible = true;
     const widgetData = this.steps[nextStep].widgetData;
     this.steps[nextStep].widgetData = {
@@ -455,12 +463,16 @@ export default class ScomFlow extends Module {
 
   private handleUpdateStepStatus(data: any) {
     const step = this.activeStep;
-    const label = this.stepStatusLbls[step];
-    if (data.caption != null)
-      label.caption = data.caption || "";
+    const lblStatus = this.stepStatusLbls[step];
+    const lblMsg = this.stepMsgLbls[step];
+    if (data.status != null)
+      lblStatus.caption = data.status || "";
     if (data.color != null)
-      label.font = { weight: 600, color: data.color };
-    if (this.onUpdateStepStatus) this.onUpdateStepStatus(step, data.caption || "");
+      lblStatus.font = { weight: 600, color: data.color };
+    if (data.message != null) 
+      lblMsg.caption = data.message;
+    lblMsg.visible = !!data.message;
+    if (this.onUpdateStepStatus) this.onUpdateStepStatus(step, data.status || "", data.message);
   }
 
   private async handleFlowStage(step: number, flowWidget: any, isWidgetConnected: boolean) {
