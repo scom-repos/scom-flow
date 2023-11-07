@@ -35,7 +35,7 @@ interface ScomFlowElement extends ControlElement {
   widgets?: IWidgetData[];
   onChanged?: (target: Control, activeStep: number) => void;
   onAddTransactions?: (data: any[]) => void;
-  onUpdateStepStatus?: (step: number, status: string, message?: string) => void;
+  onUpdateStepStatus?: (step: number, status: string, message?: string, executionProperties?: any) => void;
 }
 
 declare global {
@@ -165,7 +165,7 @@ export default class ScomFlow extends Module {
 
   public onChanged: (target: Control, activeStep: number) => void;
   public onAddTransactions: (data: any[]) => void;
-  public onUpdateStepStatus: (step: number, status: string, message?: string) => void;
+  public onUpdateStepStatus: (step: number, status: string, message?: string, executionProperties?: any) => void;
 
   static async create(options?: ScomFlowElement, parent?: Container) {
     let self = new this(parent, options);
@@ -280,7 +280,7 @@ export default class ScomFlow extends Module {
         }
       ]
     })
-    this.tableTransactions.data = [];
+    this.tableTransactions.data = data.transactions || [];
     this._data = data;
     this.steps = this.calculateSteps(this._data.widgets);
     this.state = new State({steps: this.steps ?? [], activeStep: this._data.activeStep ?? 0});
@@ -301,7 +301,7 @@ export default class ScomFlow extends Module {
     this.stepElms = [];
     this.stepStatusLbls = [];
     this.stepMsgLbls = [];
-    if (this.tableTransactions) this.tableTransactions.data = [];
+    if (this.tableTransactions) this.tableTransactions.data = this._data.transactions || [];
     this.pnlTransactions.visible = false;
     this.pnlStep.clearInnerHTML();
     this.pnlEmbed.clearInnerHTML();
@@ -320,11 +320,13 @@ export default class ScomFlow extends Module {
   private async renderSteps() {
     for (let i = 0; i < this.steps.length; i++) {
       const step = this.steps[i];
-      const lblStepMsg = (<i-label font={{ color: Theme.colors.warning.main }} visible={false}></i-label>)
-      const lblStatus = (<i-label font={{ weight: 600 }}></i-label>);
+      const history = this._data?.stepHistory?.[i];
+      const status = history?.status || "";
+      const lblStepMsg = (<i-label font={{ color: Theme.colors.warning.main }} caption={history?.message || ""} visible={!!history?.message}></i-label>)
+      const lblStatus = (<i-label font={{ weight: 600, color: status == 'Completed' ? Theme.colors.success.main : Theme.colors.warning.main }} caption={status}></i-label>);
       const item = (
         <i-hstack
-          visible={i == 0}
+          visible={i == 0 || i == this.activeStep || !!history}
           verticalAlignment="center" horizontalAlignment="space-between"
           gap={'1rem'}
           padding={{left: '1rem', right: '1.5rem', top: '1rem', bottom: '1rem'}}
@@ -342,7 +344,18 @@ export default class ScomFlow extends Module {
           </i-panel>
         </i-hstack>
       )
-      if (!this.isStepSelectable(i)) {
+      if (history?.properties) {
+        const widgetData = step.widgetData;
+        this.steps[i].widgetData.options = {
+          properties: {
+            ...widgetData.options.properties,
+            ...history.properties
+          }
+        }
+      }
+      if (this.activeStep > 0) {
+        this.state.setCompleted(i, true);
+      } else if (!this.isStepSelectable(i)) {
         item.classList.add('--disabled');
       }
       item.setAttribute('data-step', `${i}`)
@@ -413,6 +426,14 @@ export default class ScomFlow extends Module {
     }
     if (nextStep) {
       await this.changeStep(nextStep, false);
+      let stepStatus: any = {
+        status: "Pending",
+        color: Theme.colors.warning.main,
+      };
+      if (data.executionProperties) {
+        stepStatus.executionProperties = data.executionProperties;
+      }
+      this.handleUpdateStepStatus(stepStatus);
     }
   }
 
@@ -451,6 +472,14 @@ export default class ScomFlow extends Module {
     console.log('nextStep', data);
     if (nextStep) {
       await this.changeStep(nextStep, false);
+      let stepStatus: any = {
+        status: "Pending",
+        color: Theme.colors.warning.main,
+      };
+      if (data.executionProperties) {
+        stepStatus.executionProperties = data.executionProperties;
+      }
+      this.handleUpdateStepStatus(stepStatus);
     }
   }
 
@@ -461,7 +490,7 @@ export default class ScomFlow extends Module {
     if (this.onAddTransactions) this.onAddTransactions(data.list);
   }
 
-  private handleUpdateStepStatus(data: any) {
+  private handleUpdateStepStatus(data: { status: string, color?: string, message?: string, executionProperties?: any }) {
     const step = this.activeStep;
     const lblStatus = this.stepStatusLbls[step];
     const lblMsg = this.stepMsgLbls[step];
@@ -472,7 +501,7 @@ export default class ScomFlow extends Module {
     if (data.message != null) 
       lblMsg.caption = data.message;
     lblMsg.visible = !!data.message;
-    if (this.onUpdateStepStatus) this.onUpdateStepStatus(step, data.status || "", data.message);
+    if (this.onUpdateStepStatus) this.onUpdateStepStatus(step, data.status || "", data.message, data.executionProperties);
   }
 
   private async handleFlowStage(step: number, flowWidget: any, isWidgetConnected: boolean) {

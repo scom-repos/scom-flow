@@ -52,4 +52,6 @@ export interface IFlowData {
   description?: string;
   option?: IOption;
   widgets?: IWidgetData[];
+  transactions?: any[];
+  stepHistory?: { [step: number]: any };
 }
