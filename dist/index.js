@@ -447,7 +447,7 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                     }
                 ]
             });
-            this.tableTransactions.data = [];
+            this.tableTransactions.data = data.transactions || [];
             this._data = data;
             this.steps = this.calculateSteps(this._data.widgets);
             this.state = new index_1.State({ steps: this.steps ?? [], activeStep: this._data.activeStep ?? 0 });
@@ -469,7 +469,7 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             this.stepStatusLbls = [];
             this.stepMsgLbls = [];
             if (this.tableTransactions)
-                this.tableTransactions.data = [];
+                this.tableTransactions.data = this._data.transactions || [];
             this.pnlTransactions.visible = false;
             this.pnlStep.clearInnerHTML();
             this.pnlEmbed.clearInnerHTML();
@@ -486,9 +486,11 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
         async renderSteps() {
             for (let i = 0; i < this.steps.length; i++) {
                 const step = this.steps[i];
-                const lblStepMsg = (this.$render("i-label", { font: { color: Theme.colors.warning.main }, visible: false }));
-                const lblStatus = (this.$render("i-label", { font: { weight: 600 } }));
-                const item = (this.$render("i-hstack", { visible: i == 0, verticalAlignment: "center", horizontalAlignment: "space-between", gap: '1rem', padding: { left: '1rem', right: '1.5rem', top: '1rem', bottom: '1rem' }, class: 'flow-step' + (i === this.activeStep ? ' --active' : ''), 
+                const history = this._data?.stepHistory?.[i];
+                const status = history?.status || "";
+                const lblStepMsg = (this.$render("i-label", { font: { color: Theme.colors.warning.main }, caption: history?.message || "", visible: !!history?.message }));
+                const lblStatus = (this.$render("i-label", { font: { weight: 600, color: status == 'Completed' ? Theme.colors.success.main : Theme.colors.warning.main }, caption: status }));
+                const item = (this.$render("i-hstack", { visible: i == 0 || i == this.activeStep || !!history, verticalAlignment: "center", horizontalAlignment: "space-between", gap: '1rem', padding: { left: '1rem', right: '1.5rem', top: '1rem', bottom: '1rem' }, class: 'flow-step' + (i === this.activeStep ? ' --active' : ''), 
                     // background={{color: Theme.action.hover}}
                     onClick: () => this.onSelectedStep(i) },
                     this.$render("i-vstack", { class: "step-stack", gap: '1rem' },
@@ -497,7 +499,19 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                     this.$render("i-panel", { class: "text-right" },
                         lblStatus,
                         this.$render("i-image", { url: step.image, width: 50, display: "flex" }))));
-                if (!this.isStepSelectable(i)) {
+                if (history?.properties) {
+                    const widgetData = step.widgetData;
+                    this.steps[i].widgetData.options = {
+                        properties: {
+                            ...widgetData.options.properties,
+                            ...history.properties
+                        }
+                    };
+                }
+                if (this.activeStep > 0) {
+                    this.state.setCompleted(i, true);
+                }
+                else if (!this.isStepSelectable(i)) {
                     item.classList.add('--disabled');
                 }
                 item.setAttribute('data-step', `${i}`);
@@ -566,6 +580,14 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             }
             if (nextStep) {
                 await this.changeStep(nextStep, false);
+                let stepStatus = {
+                    status: "Pending",
+                    color: Theme.colors.warning.main,
+                };
+                if (data.executionProperties) {
+                    stepStatus.executionProperties = data.executionProperties;
+                }
+                this.handleUpdateStepStatus(stepStatus);
             }
         }
         async handleNextStep(data) {
@@ -603,6 +625,14 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             console.log('nextStep', data);
             if (nextStep) {
                 await this.changeStep(nextStep, false);
+                let stepStatus = {
+                    status: "Pending",
+                    color: Theme.colors.warning.main,
+                };
+                if (data.executionProperties) {
+                    stepStatus.executionProperties = data.executionProperties;
+                }
+                this.handleUpdateStepStatus(stepStatus);
             }
         }
         async handleAddTransactions(data) {
@@ -625,7 +655,7 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
                 lblMsg.caption = data.message;
             lblMsg.visible = !!data.message;
             if (this.onUpdateStepStatus)
-                this.onUpdateStepStatus(step, data.status || "", data.message);
+                this.onUpdateStepStatus(step, data.status || "", data.message, data.executionProperties);
         }
         async handleFlowStage(step, flowWidget, isWidgetConnected) {
             const widgetContainer = this.widgetContainerMap.get(step);
