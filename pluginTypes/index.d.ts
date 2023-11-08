@@ -55,16 +55,23 @@ declare module "@scom/scom-flow/interface.ts" {
         tokenRequirements?: ITokenRequirement[];
     }
     export type IOption = 'auto' | 'manual';
+    export interface IFlowHistory {
+        dataUri: string;
+        walletAddress: string;
+        step: number;
+        status: string;
+        message: string;
+        properties?: any;
+        timestamp: number;
+    }
     export interface IFlowData {
         activeStep?: number;
         img?: string;
         description?: string;
         option?: IOption;
         widgets?: IWidgetData[];
+        history?: IFlowHistory[];
         transactions?: any[];
-        stepHistory?: {
-            [step: number]: any;
-        };
     }
 }
 /// <amd-module name="@scom/scom-flow/store/state.ts" />
@@ -181,6 +188,8 @@ declare module "@scom/scom-flow" {
         private TransactionsTableColumns;
         private _data;
         private state;
+        private stepHistory;
+        private stepSequence;
         onChanged: (target: Control, activeStep: number) => void;
         onAddTransactions: (data: any[]) => void;
         onUpdateStepStatus: (step: number, status: string, message?: string, executionProperties?: any) => void;
@@ -197,6 +206,7 @@ declare module "@scom/scom-flow" {
         private calculateSteps;
         setData(data: IFlowData): Promise<void>;
         getData(): IFlowData;
+        getStepTitle(step: number): string;
         private initializeUI;
         private renderOption;
         private renderSteps;
