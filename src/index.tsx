@@ -290,7 +290,7 @@ export default class ScomFlow extends Module {
     this.stepHistory = {};
     this.stepSequence = [];
     if (this._data.history) {
-      let step = 0;
+      const temp = [];
       this._data.history.forEach(h => {
         if (!this.stepHistory[h.step]) {
           this.stepHistory[h.step] = {};
@@ -299,14 +299,21 @@ export default class ScomFlow extends Module {
         if (h.message) this.stepHistory[h.step].message = h.message;
         if (h.properties) this.stepHistory[h.step].properties = h.properties;
         this._data.activeStep = h.step;
-        if (step > h.step) {
-          this.stepSequence.push({
-            step: h.step,
-            prevStep: step
-          });
-        }
-        step = h.step;
+        temp.push(h.step);
       });
+      if (temp.length > 1) {
+        const arrStep = temp.reverse().filter((value, index, array) => array.indexOf(value) === index);
+        let step = arrStep.pop();
+        for (let s of arrStep.reverse()) {
+          if (step > s) {
+            this.stepSequence.push({
+              step: s,
+              prevStep: step
+            });
+          }
+          step = s;
+        }
+      }
     }
     await this.initializeUI();
   }
