@@ -504,7 +504,7 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             this.stepMsgLbls = [];
             if (this.tableTransactions)
                 this.tableTransactions.data = this._data.transactions || [];
-            this.pnlTransactions.visible = false;
+            this.pnlTransactions.visible = this.activeStep !== 0;
             this.pnlStep.clearInnerHTML();
             this.pnlEmbed.clearInnerHTML();
             await this.renderSteps();
