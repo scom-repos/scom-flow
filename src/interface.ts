@@ -46,12 +46,22 @@ export interface IWidgetData {
 
 export type IOption = 'auto' | 'manual'
 
+export interface IFlowHistory {
+  dataUri: string;
+  walletAddress: string;
+  step: number;
+  status: string;
+  message: string;
+  properties?: any;
+  timestamp: number;
+}
+
 export interface IFlowData {
   activeStep?: number;
   img?: string;
   description?: string;
   option?: IOption;
   widgets?: IWidgetData[];
+  history?: IFlowHistory[];
   transactions?: any[];
-  stepHistory?: { [step: number]: any };
 }

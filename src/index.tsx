@@ -162,6 +162,8 @@ export default class ScomFlow extends Module {
     activeStep: 0
   };
   private state: State;
+  private stepHistory: { [step: number]: any };
+  private stepSequence: { step: number, prevStep: number }[];
 
   public onChanged: (target: Control, activeStep: number) => void;
   public onAddTransactions: (data: any[]) => void;
@@ -285,11 +287,43 @@ export default class ScomFlow extends Module {
     this.steps = this.calculateSteps(this._data.widgets);
     this.state = new State({steps: this.steps ?? [], activeStep: this._data.activeStep ?? 0});
     this.state.steps = this.steps;
+    this.stepHistory = {};
+    this.stepSequence = [];
+    if (this._data.history) {
+      const temp = [];
+      this._data.history.forEach(h => {
+        if (!this.stepHistory[h.step]) {
+          this.stepHistory[h.step] = {};
+        }
+        if (h.status) this.stepHistory[h.step].status = h.status;
+        if (h.message) this.stepHistory[h.step].message = h.message;
+        if (h.properties) this.stepHistory[h.step].properties = h.properties;
+        this._data.activeStep = h.step;
+        temp.push(h.step);
+      });
+      if (temp.length > 1) {
+        const arrStep = temp.reverse().filter((value, index, array) => array.indexOf(value) === index);
+        let step = arrStep.pop();
+        for (let s of arrStep.reverse()) {
+          if (step > s) {
+            this.stepSequence.push({
+              step: s,
+              prevStep: step
+            });
+          }
+          step = s;
+        }
+      }
+    }
     await this.initializeUI();
   }
 
   getData() {
     return this._data;
+  }
+  
+  getStepTitle(step: number) {
+    return this.steps[step]?.name || "";
   }
 
   private async initializeUI() {
@@ -302,10 +336,15 @@ export default class ScomFlow extends Module {
     this.stepStatusLbls = [];
     this.stepMsgLbls = [];
     if (this.tableTransactions) this.tableTransactions.data = this._data.transactions || [];
-    this.pnlTransactions.visible = false;
+    this.pnlTransactions.visible = this.activeStep !== 0;
     this.pnlStep.clearInnerHTML();
     this.pnlEmbed.clearInnerHTML();
     await this.renderSteps();
+    if (this.stepSequence.length) {
+      this.stepSequence.forEach(s => {
+        this.stepElms[s.prevStep].after(this.stepElms[s.step]);
+      });
+    }
     const flowWidget = await this.renderEmbedElm(this.activeStep);
     const stepInfo = this.steps[this.activeStep];
     const widgetData = stepInfo?.widgetData;
@@ -320,7 +359,7 @@ export default class ScomFlow extends Module {
   private async renderSteps() {
     for (let i = 0; i < this.steps.length; i++) {
       const step = this.steps[i];
-      const history = this._data?.stepHistory?.[i];
+      const history = this.stepHistory?.[i];
       const status = history?.status || "";
       const lblStepMsg = (<i-label font={{ color: Theme.colors.warning.main }} caption={history?.message || ""} visible={!!history?.message}></i-label>)
       const lblStatus = (<i-label font={{ weight: 600, color: status == 'Completed' ? Theme.colors.success.main : Theme.colors.warning.main }} caption={status}></i-label>);

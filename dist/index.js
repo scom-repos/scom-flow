@@ -452,10 +452,44 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             this.steps = this.calculateSteps(this._data.widgets);
             this.state = new index_1.State({ steps: this.steps ?? [], activeStep: this._data.activeStep ?? 0 });
             this.state.steps = this.steps;
+            this.stepHistory = {};
+            this.stepSequence = [];
+            if (this._data.history) {
+                const temp = [];
+                this._data.history.forEach(h => {
+                    if (!this.stepHistory[h.step]) {
+                        this.stepHistory[h.step] = {};
+                    }
+                    if (h.status)
+                        this.stepHistory[h.step].status = h.status;
+                    if (h.message)
+                        this.stepHistory[h.step].message = h.message;
+                    if (h.properties)
+                        this.stepHistory[h.step].properties = h.properties;
+                    this._data.activeStep = h.step;
+                    temp.push(h.step);
+                });
+                if (temp.length > 1) {
+                    const arrStep = temp.reverse().filter((value, index, array) => array.indexOf(value) === index);
+                    let step = arrStep.pop();
+                    for (let s of arrStep.reverse()) {
+                        if (step > s) {
+                            this.stepSequence.push({
+                                step: s,
+                                prevStep: step
+                            });
+                        }
+                        step = s;
+                    }
+                }
+            }
             await this.initializeUI();
         }
         getData() {
             return this._data;
+        }
+        getStepTitle(step) {
+            return this.steps[step]?.name || "";
         }
         async initializeUI() {
             if (this.flowImg)
@@ -470,10 +504,15 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
             this.stepMsgLbls = [];
             if (this.tableTransactions)
                 this.tableTransactions.data = this._data.transactions || [];
-            this.pnlTransactions.visible = false;
+            this.pnlTransactions.visible = this.activeStep !== 0;
             this.pnlStep.clearInnerHTML();
             this.pnlEmbed.clearInnerHTML();
             await this.renderSteps();
+            if (this.stepSequence.length) {
+                this.stepSequence.forEach(s => {
+                    this.stepElms[s.prevStep].after(this.stepElms[s.step]);
+                });
+            }
             const flowWidget = await this.renderEmbedElm(this.activeStep);
             const stepInfo = this.steps[this.activeStep];
             const widgetData = stepInfo?.widgetData;
@@ -486,7 +525,7 @@ define("@scom/scom-flow", ["require", "exports", "@ijstech/components", "@scom/s
         async renderSteps() {
             for (let i = 0; i < this.steps.length; i++) {
                 const step = this.steps[i];
-                const history = this._data?.stepHistory?.[i];
+                const history = this.stepHistory?.[i];
                 const status = history?.status || "";
                 const lblStepMsg = (this.$render("i-label", { font: { color: Theme.colors.warning.main }, caption: history?.message || "", visible: !!history?.message }));
                 const lblStatus = (this.$render("i-label", { font: { weight: 600, color: status == 'Completed' ? Theme.colors.success.main : Theme.colors.warning.main }, caption: status }));
